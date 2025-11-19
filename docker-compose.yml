@@ -1,0 +1,113 @@
+version: '3.8'
+
+networks:
+  microservices_network:
+    driver: bridge
+
+services:
+  # --- NIVEL 1: INFRAESTRUCTURA (Logs y Tracing) ---
+  zipkin-container:
+    image: openzipkin/zipkin
+    container_name: zipkin
+    ports:
+      - "9411:9411"
+    networks:
+      - microservices_network
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # --- NIVEL 2: CORE (Discovery & Config) ---
+  service-discovery-container:
+    build: ./service-discovery
+    image: service-discovery-ecommerce-boot:0.1.0
+    container_name: service-discovery
+    ports:
+      - "8761:8761"
+    networks:
+      - microservices_network
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8761/eureka/apps"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    deploy:
+      resources:
+        limits:
+          memory: 350M
+
+  cloud-config-container:
+    build: ./cloud-config
+    image: cloud-config-ecommerce-boot:0.1.0
+    container_name: cloud-config
+    ports:
+      - "9296:9296"
+    networks:
+      - microservices_network
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-discovery:8761/eureka
+      - SPRING_ZIPKIN_BASE_URL=http://zipkin:9411/
+    depends_on:
+      service-discovery-container:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 350M
+
+  # --- NIVEL 3: GATEWAY (Puerta de enlace) ---
+  api-gateway-container:
+    build: ./api-gateway
+    image: api-gateway-ecommerce-boot:0.1.0
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    networks:
+      - microservices_network
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-discovery:8761/eureka
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://cloud-config:9296
+      - SPRING_ZIPKIN_BASE_URL=http://zipkin:9411/
+    depends_on:
+      service-discovery-container:
+        condition: service_healthy
+      cloud-config-container:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+
+  # --- NIVEL 4: MICROSERVICIOS DE NEGOCIO ---
+  # (Repite este bloque para order, user, payment, shipping, favourite)
+  
+  product-service-container:
+    build: ./product-service
+    image: product-service-ecommerce-boot:0.1.0
+    container_name: product-service
+    ports:
+      - "8500:8500"
+    networks:
+      - microservices_network
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-discovery:8761/eureka
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://cloud-config:9296
+      - SPRING_ZIPKIN_BASE_URL=http://zipkin:9411/
+    depends_on:
+      service-discovery-container:
+        condition: service_healthy
+      cloud-config-container:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+
+  # AGREGA AQUÍ LOS DEMÁS SERVICIOS (User, Order, etc.)
+  # Copia el bloque de product-service y cambia el nombre de la carpeta (build) y puertos.
