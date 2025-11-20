@@ -159,12 +159,14 @@ spec:
         env:
         - name: SERVER_PORT
           value: "8080"
+          
         - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
           value: "true"
         - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
+
         - name: JAVA_TOOL_OPTIONS
           value: "-Deureka.client.serviceUrl.defaultZone=http://service-discovery:8761/eureka/ -Dspring.cloud.config.uri=http://cloud-config:9296"
         resources:
