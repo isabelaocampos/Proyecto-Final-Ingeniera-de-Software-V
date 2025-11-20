@@ -2,8 +2,10 @@ name: Build and Push Microservices
 
 on:
   push:
-    branches: [ "master", "dev" ]
+    # Agregamos 'master', 'dev' y tu rama actual 'infra/**'
+    branches: [ "master", "dev", "infra/**" ] 
   pull_request:
+    # Se activará cuando hagas PR hacia master o dev
     branches: [ "master", "dev" ]
   workflow_dispatch:
 
