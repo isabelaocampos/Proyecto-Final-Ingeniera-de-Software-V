@@ -31,3 +31,18 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# --- Terraform (Infraestructura) ---
+# La carpeta pesada con los plugins descargados
+.terraform/
+
+# Archivos de estado (¡NUNCA subir esto, contiene tus contraseñas!)
+*.tfstate
+*.tfstate.*
+
+# Archivos de variables con secretos (por si acaso creas uno a futuro)
+*.tfvars
+*.tfvars.json
+
+# Logs de errores
+crash.log
