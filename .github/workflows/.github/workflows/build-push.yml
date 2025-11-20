@@ -34,6 +34,7 @@ jobs:
         password: ${{ secrets.ACR_PASSWORD }}
 
     # 3. Construir y Subir las 10 Imágenes
+    # Nota: Asegúrate de que los Dockerfiles estén en las carpetas correctas
     - name: Build and Push Images
       run: |
         services="service-discovery cloud-config api-gateway product-service user-service order-service payment-service shipping-service favourite-service proxy-client"
