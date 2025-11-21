@@ -83,6 +83,13 @@ jobs:
           # Lista de servicios
           services="service-discovery cloud-config api-gateway product-service user-service order-service payment-service shipping-service favourite-service"
           version="${{ needs.ci-check.outputs.new_version }}"
+
+          # --- PASO DETECTIVE ---
+          echo "🔍 Listando archivos en service-discovery/target:"
+          ls -R service-discovery/target || echo "❌ No existe la carpeta target!"
+          # ----------------------
+
+          services="service-discovery cloud-config ..."
           
           for service in $services; do
             echo "📦 Building $service:$version..."
