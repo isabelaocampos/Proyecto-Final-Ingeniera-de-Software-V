@@ -8,14 +8,14 @@ on:
 
 env:
   # Configuración Global
-  ACR_NAME: "ecommerceacrios25" # Tu nombre base sin el ambiente
+  ACR_NAME: "ecommerceacrios25"
   RESOURCE_GROUP_BASE: "ecommerce-rg"
   AKS_CLUSTER_BASE: "ecommerce-aks"
 
+# --- CAMBIO 1: Permisos de escritura a nivel global ---
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
-
 
 jobs:
   # --- ETAPA 1: INTEGRACIÓN CONTINUA (CI) ---
@@ -33,30 +33,27 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      # 1. Análisis Estático (SonarQube) - Requisito 
-      # Nota: Requiere servidor Sonar. Si no tienes, usa SonarCloud.io (Gratis para público)
-      # - name: SonarQube Scan
-      #   run: mvn sonar:sonar -Dsonar.projectKey=ecommerce-backend -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} -Dsonar.login=${{ secrets.SONAR_TOKEN }}
-      
-      # 2. Compilación y Pruebas Unitarias - Requisito 
+      # 2. Compilación y Pruebas Unitarias
       - name: Build & Test
-        run: mvn clean package -DskipTests # Quita skipTests cuando tu compañera termine las pruebas
+        run: mvn clean package -DskipTests
 
-      # 3. Escaneo de Vulnerabilidades en Código (Trivy FS) - Requisito 
+      # 3. Escaneo de Vulnerabilidades (Trivy FS)
       - name: Trivy Filesystem Scan
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'fs'
           scan-ref: '.'
-          trivy-config: trivy.yaml # Opcional
-          exit-code: '0' # No fallar el pipeline, solo reportar (cámbialo a 1 para ser estricto)
+          trivy-config: trivy.yaml
+          exit-code: '0'
 
-      # 4. Versionado Semántico - Requisito 
+      # 4. Versionado Semántico
       - name: Semantic Versioning
         id: semver
         uses: anothrNick/github-tag-action@1.67.0
         env:
-          GITHUB_TOKEN: ${{ secrets.MY_PAT }}
+          # --- CAMBIO 2: Usamos TU token personal (PAT) en lugar del default ---
+          GITHUB_TOKEN: ${{ secrets.MY_PAT }} 
+          # --------------------------------------------------------------------
           WITH_V: true
           DEFAULT_BUMP: patch
 
@@ -67,40 +64,36 @@ jobs:
   build-push:
     needs: ci-check
     runs-on: ubuntu-latest
-    environment: dev # Usamos secretos de dev por defecto
+    environment: dev
     steps:
       - uses: actions/checkout@v3
       
       - name: Login to ACR
         uses: docker/login-action@v2
         with:
-          registry: ${{ secrets.ACR_LOGIN_SERVER }} # Asegúrate de tener estos secretos
+          registry: ${{ secrets.ACR_LOGIN_SERVER }}
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
 
       - name: Build and Push Docker Images
         run: |
-          # Lista de servicios
-          services="service-discovery cloud-config api-gateway product-service user-service order-service payment-service shipping-service favourite-service"
+          services="service-discovery cloud-config api-gateway product-service user-service order-service payment-service shipping-service favourite-service proxy-client"
           version="${{ needs.ci-check.outputs.new_version }}"
-
-          # --- PASO DETECTIVE ---
-          echo "🔍 Listando archivos en service-discovery/target:"
-          ls -R service-discovery/target || echo "❌ No existe la carpeta target!"
-          # ----------------------
-
-          services="service-discovery cloud-config ..."
           
           for service in $services; do
-            echo "📦 Building $service:$version..."
-            docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/$service:$version ./$service
-            docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/$service:latest ./$service
+            echo "🚀 Procesando $service..."
+            
+            # Construir DENTRO de la carpeta para que Maven genere el target ahí
+            cd $service
+            mvn clean package -DskipTests
+            
+            docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/$service:$version .
+            docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/$service:latest .
+            
             docker push ${{ secrets.ACR_LOGIN_SERVER }}/$service:$version
             docker push ${{ secrets.ACR_LOGIN_SERVER }}/$service:latest
             
-            # Escaneo de Vulnerabilidades en IMAGEN (Trivy) - Requisito 
-            # (Comentado para ahorrar tiempo, descomentar para demo)
-            # trivy image ${{ secrets.ACR_LOGIN_SERVER }}/$service:$version
+            cd ..
           done
 
   # --- ETAPA 3: DESPLIEGUE CONTINUO (CD) - DEV ---
@@ -109,14 +102,14 @@ jobs:
     runs-on: ubuntu-latest
     environment: 
       name: dev
-      url: http://20.246.215.248:8080/actuator/health # Pon tu IP real aquí
+      url: http://20.246.215.248:8080/actuator/health
     steps:
       - uses: actions/checkout@v3
       
       - name: Azure Login
         uses: azure/login@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }} # ¡Necesitas crear esto! (Ver abajo)
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Set AKS Context
         uses: azure/aks-set-context@v3
@@ -126,9 +119,7 @@ jobs:
 
       - name: Deploy to Kubernetes
         run: |
-          # Reemplazar imagen con la versión nueva en los YAMLs
           sed -i "s|:latest|:${{ needs.ci-check.outputs.new_version }}|g" k8s/all-deployments.yaml
-          # Aplicar
           kubectl apply -f k8s/all-deployments.yaml
 
   # --- ETAPA 4: PROMOCIÓN A PROD (Manual) ---
@@ -136,8 +127,8 @@ jobs:
     needs: deploy-dev
     runs-on: ubuntu-latest
     environment: 
-      name: prod # ESTO ACTIVA LA APROBACIÓN MANUAL
-    if: github.ref == 'refs/heads/master' # Solo si es la rama master
+      name: prod
+    if: github.ref == 'refs/heads/master'
     steps:
       - uses: actions/checkout@v3
       
@@ -154,12 +145,10 @@ jobs:
 
       - name: Deploy to Kubernetes (PROD)
         run: |
-          # Aquí desplegaríamos a Prod. (Asume que el clúster Prod está PRENDIDO)
           sed -i "s|:latest|:${{ needs.ci-check.outputs.new_version }}|g" k8s/all-deployments.yaml
           kubectl apply -f k8s/all-deployments.yaml
 
-  # --- ETAPA 5: NOTIFICACIONES ---
-# --- ETAPA 5: NOTIFICACIONES DE FALLO ---
+  # --- ETAPA 5: NOTIFICACIONES DE FALLO ---
   notify-failure:
     needs: [ci-check, build-push, deploy-dev, deploy-prod]
     if: failure() 
@@ -168,32 +157,15 @@ jobs:
       - name: Send Notification Email
         uses: dawidd6/action-send-mail@v3
         with:
-          # Configuración del Servidor (Ejemplo para Gmail)
           server_address: smtp.gmail.com
           server_port: 465
           secure: true
-          
-          # Credenciales (Leídas de Secretos)
           username: ${{ secrets.MAIL_USERNAME }}
           password: ${{ secrets.MAIL_PASSWORD }}
-          
-          # Detalles del Correo
           subject: "🚨 ALERTA: Falló el Despliegue en ${{ github.repository }}"
           to: "isabelaocampo08@gmail.com, valengonzatapiero@gmail.com"
           from: GitHub Actions Monitor
-          
-          # Cuerpo del mensaje (HTML o Texto)
           body: |
             Hola equipo,
-            
             El pipeline de CI/CD ha fallado. ❌
-            
-            - Rama: ${{ github.ref }}
-            - Commit: ${{ github.sha }}
-            - Autor: ${{ github.actor }}
-            
-            Por favor revisen los logs inmediatamente:
-            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-            
-            Atentamente,
-            Tu Bot de DevOps 🤖
+            Revisar logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
