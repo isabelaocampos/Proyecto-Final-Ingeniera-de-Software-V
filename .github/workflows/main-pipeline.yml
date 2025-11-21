@@ -164,8 +164,8 @@ jobs:
           password: ${{ secrets.MAIL_PASSWORD }}
           
           # Detalles del Correo
-          subject: 🚨 ALERTA: Falló el Despliegue en ${{ github.repository }}
-          to: isabelaocampo08@gmail.com, valengonzatapierogmail.com
+          subject: "🚨 ALERTA: Falló el Despliegue en ${{ github.repository }}"
+          to: "isabelaocampo08@gmail.com, valengonzatapiero@gmail.com"
           from: GitHub Actions Monitor
           
           # Cuerpo del mensaje (HTML o Texto)
