@@ -159,10 +159,10 @@ spec:
         env:
         - name: SERVER_PORT
           value: "8080"
-          
+
         - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
           value: "true"
-        - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+        - name: EUREKA_INSTANCE_IP_ADDRESS
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
