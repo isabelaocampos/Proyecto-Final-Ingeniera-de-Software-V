@@ -60,7 +60,7 @@ spec:
     spec:
       containers:
       - name: service-discovery
-        image: ecommerceacrios25.azurecr.io/service-discovery:latest
+        image: ecommerceacrios25dev.azurecr.io/service-discovery:latest
         ports:
         - containerPort: 8761
         resources:
@@ -101,7 +101,7 @@ spec:
     spec:
       containers:
       - name: cloud-config
-        image: ecommerceacrios25.azurecr.io/cloud-config:latest
+        image: ecommerceacrios25dev.azurecr.io/cloud-config:latest
         ports:
         - containerPort: 9296
         env:
@@ -153,7 +153,7 @@ spec:
         command: ['sh', '-c', 'until nc -z service-discovery 8761 && nc -z cloud-config 9296; do echo waiting for core services; sleep 2; done']
       containers:
       - name: api-gateway
-        image: ecommerceacrios25.azurecr.io/api-gateway:latest
+        image: ecommerceacrios25dev.azurecr.io/api-gateway:latest
         ports:
         - containerPort: 8080
         env:
@@ -211,7 +211,7 @@ spec:
         command: ['sh', '-c', 'until nc -z service-discovery 8761 && nc -z cloud-config 9296; do echo waiting for core services; sleep 2; done']
       containers:
       - name: product-service
-        image: ecommerceacrios25.azurecr.io/product-service:latest
+        image: ecommerceacrios25dev.azurecr.io/product-service:latest
         ports:
         - containerPort: 8500
         env:
@@ -269,7 +269,7 @@ spec:
         command: ['sh', '-c', 'until nc -z service-discovery 8761 && nc -z cloud-config 9296; do echo waiting for core services; sleep 2; done']
       containers:
       - name: user-service
-        image: ecommerceacrios25.azurecr.io/user-service:latest
+        image: ecommerceacrios25dev.azurecr.io/user-service:latest
         ports:
         - containerPort: 8700
         env:
@@ -326,7 +326,7 @@ spec:
         command: ['sh', '-c', 'until nc -z service-discovery 8761 && nc -z cloud-config 9296; do echo waiting for core services; sleep 2; done']
       containers:
       - name: order-service
-        image: ecommerceacrios25.azurecr.io/order-service:latest
+        image: ecommerceacrios25dev.azurecr.io/order-service:latest
         ports:
         - containerPort: 8300
         env:
@@ -382,7 +382,7 @@ spec:
         command: ['sh', '-c', 'until nc -z service-discovery 8761 && nc -z cloud-config 9296; do echo waiting for core services; sleep 2; done']
       containers:
       - name: payment-service
-        image: ecommerceacrios25.azurecr.io/payment-service:latest
+        image: ecommerceacrios25dev.azurecr.io/payment-service:latest
         ports:
         - containerPort: 8400
         env:
@@ -438,7 +438,7 @@ spec:
         command: ['sh', '-c', 'until nc -z service-discovery 8761 && nc -z cloud-config 9296; do echo waiting for core services; sleep 2; done']
       containers:
       - name: shipping-service
-        image: ecommerceacrios25.azurecr.io/shipping-service:latest
+        image: ecommerceacrios25dev.azurecr.io/shipping-service:latest
         ports:
         - containerPort: 8600
         env:
@@ -494,7 +494,7 @@ spec:
         command: ['sh', '-c', 'until nc -z service-discovery 8761 && nc -z cloud-config 9296; do echo waiting for core services; sleep 2; done']
       containers:
       - name: favourite-service
-        image: ecommerceacrios25.azurecr.io/favourite-service:latest
+        image: ecommerceacrios25dev.azurecr.io/favourite-service:latest
         ports:
         - containerPort: 8800
         env:
