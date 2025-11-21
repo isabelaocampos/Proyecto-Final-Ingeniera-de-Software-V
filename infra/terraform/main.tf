@@ -5,15 +5,12 @@ terraform {
       version = "~> 3.0"
     }
   }
-
-  # Configuración del backend para guardar el estado remotamente.
-  # Estos valores deben ser suministrados al inicializar terraform (terraform init)
-  # o mediante un archivo de configuración parcial.
+  # Tu backend remoto se queda IGUAL (No lo borres)
   backend "azurerm" {
-    resource_group_name  = "tfstate-rg"
-    storage_account_name = "tfstate2025ios" 
-    container_name       = "tfstate" 
-    key                  = "terraform.tfstate"
+      resource_group_name  = "tfstate-rg"
+      storage_account_name = "tfstate2025ios" 
+      container_name       = "tfstate"
+      key                  = "terraform.tfstate"
   }
 }
 
@@ -21,52 +18,53 @@ provider "azurerm" {
   features {}
 }
 
-# Grupo de Recursos
-resource "azurerm_resource_group" "rg" {
-  name     = var.resource_group_name
-  location = var.location
-}
+# --- CONFIGURACIÓN POR AMBIENTE ---
+locals {
+  env = terraform.workspace # Obtiene "dev", "stage" o "prod"
 
-# Azure Container Registry (ACR)
-# SKU Basic para bajo costo, admin_enabled true como solicitado.
-resource "azurerm_container_registry" "acr" {
-  name                = var.acr_name
-  resource_group_name = azurerm_resource_group.rg.name
-  location            = azurerm_resource_group.rg.location
-  sku                 = "Basic"
-  admin_enabled       = true
-}
-
-# Azure Kubernetes Service (AKS)
-resource "azurerm_kubernetes_cluster" "aks" {
-  name                = var.aks_cluster_name
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  dns_prefix          = "${var.aks_cluster_name}-dns"
-
-  # Configuración Low-Cost solicitada
-  default_node_pool {
-    name       = "default"
-    node_count = var.node_count
-    vm_size    = var.vm_size # Standard_B4ms (4 vCPU, 16GB RAM)
+  # Mapa de configuración: Define las reglas del juego
+  env_settings = {
+    default = { count = 1, size = "Standard_B4ms" } # Por si acaso
+    
+    dev = {
+      node_count = 1
+      vm_size    = "Standard_B4ms" # Barato
+    }
+    
+    stage = {
+      node_count = 1
+      vm_size    = "Standard_B4ms" # Igual a dev
+    }
+    
+    prod = {
+      node_count = 2               # ¡Más potencia para prod!
+      vm_size    = "Standard_B4ms" # (O podrías usar D2s_v3 si tuvieras crédito)
+    }
   }
 
-  # Identidad gestionada por el sistema
-  identity {
-    type = "SystemAssigned"
-  }
-
-  tags = {
-    Environment = "Development"
-    Project     = "Ecommerce-Microservices"
-  }
+  # Selecciona la configuración según el workspace actual
+  selected_conf = lookup(local.env_settings, local.env, local.env_settings["default"])
 }
 
-# Asignación de roles para permitir que AKS descargue imágenes del ACR
-# Se asigna el rol 'AcrPull' a la identidad 'kubelet' del clúster sobre el ACR.
-resource "azurerm_role_assignment" "aks_acr_pull" {
-  principal_id                     = azurerm_kubernetes_cluster.aks.kubelet_identity[0].object_id
-  role_definition_name             = "AcrPull"
-  scope                            = azurerm_container_registry.acr.id
-  skip_service_principal_aad_check = true
+# --- LLAMADA AL MÓDULO ---
+module "aks_stack" {
+  source = "./modules/aks-environment"
+
+  # Pasamos los valores dinámicos
+  env_name      = local.env
+  node_count    = local.selected_conf.node_count
+  vm_size       = local.selected_conf.vm_size
+  
+  # ¡CAMBIA ESTO! Pon tus iniciales para que el ACR sea único
+  acr_base_name = "ecommerceacrios25" 
+}
+
+# --- OUTPUTS FINALES ---
+output "get_credentials_command" {
+  value = "az aks get-credentials --resource-group ${module.aks_stack.rg_name} --name ${module.aks_stack.aks_name}"
+}
+
+output "acr_password" {
+  value     = module.aks_stack.acr_admin_password
+  sensitive = true
 }
