@@ -1,0 +1,41 @@
+name: OPS - Start/Stop Environments
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Ambiente a controlar'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+        - dev
+        - prod
+      action:
+        description: 'Acción'
+        required: true
+        default: 'stop'
+        type: choice
+        options:
+        - start
+        - stop
+
+jobs:
+  manage-cluster:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Execute Action
+        run: |
+          RG_NAME="ecommerce-rg-${{ inputs.environment }}"
+          AKS_NAME="ecommerce-aks-${{ inputs.environment }}"
+          
+          echo "🚀 Ejecutando ${{ inputs.action }} en $AKS_NAME..."
+          
+          az aks ${{ inputs.action }} --name $AKS_NAME --resource-group $RG_NAME
+          
+          echo "✅ Acción completada."
