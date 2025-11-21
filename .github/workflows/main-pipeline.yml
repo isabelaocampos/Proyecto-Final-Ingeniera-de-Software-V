@@ -119,8 +119,10 @@ jobs:
 
       - name: Deploy to Kubernetes
         run: |
-          sed -i "s|:latest|:${{ needs.ci-check.outputs.new_version }}|g" k8s/all-deployments.yaml
           kubectl apply -f k8s/all-deployments.yaml
+
+          # Forzamos reinicio para que descargue la nueva imagen 'latest'
+          kubectl rollout restart deployment
 
   # --- ETAPA 4: PROMOCIÓN A PROD (Manual) ---
   deploy-prod:
