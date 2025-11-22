@@ -50,7 +50,7 @@ locals {
 module "aks_stack" {
   source = "./modules/aks-environment"
 
-  location      = "Central US"
+  location      = "Canada Central"
 
   # Pasamos los valores dinámicos
   env_name      = local.env
