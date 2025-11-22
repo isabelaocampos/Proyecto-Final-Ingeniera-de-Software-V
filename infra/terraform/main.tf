@@ -70,3 +70,7 @@ output "acr_password" {
   value     = module.aks_stack.acr_admin_password
   sensitive = true
 }
+
+output "acr_login_server" {
+  value = module.aks_stack.acr_login_server
+}
