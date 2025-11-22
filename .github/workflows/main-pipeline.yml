@@ -73,6 +73,18 @@ jobs:
           WITH_V: true
           DEFAULT_BUMP: patch
 
+      # ... (después del paso 'Semantic Versioning')
+
+      # 5. Generar Release Notes Automáticos 
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        if: steps.semver.outputs.new_tag != '' # Solo si hay versión nueva
+        with:
+          tag_name: ${{ steps.semver.outputs.new_tag }}
+          name: Release ${{ steps.semver.outputs.new_tag }}
+          generate_release_notes: true 
+          token: ${{ secrets.MY_PAT }} # Usa tu token personal
+
     outputs:
       new_version: ${{ steps.semver.outputs.new_tag }}
 
