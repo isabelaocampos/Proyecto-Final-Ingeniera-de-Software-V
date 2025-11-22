@@ -18,3 +18,8 @@ output "acr_admin_password" {
   value       = azurerm_container_registry.acr.admin_password
   sensitive   = true
 }
+
+output "mysql_fqdn" {
+  description = "FQDN del servidor MySQL"
+  value       = azurerm_mysql_flexible_server.mysql.fqdn
+}
