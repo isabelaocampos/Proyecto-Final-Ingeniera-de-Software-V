@@ -33,6 +33,22 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
+      # --- ANÁLISIS CON SONARCLOUD ---
+      - name: Cache SonarCloud packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+      - name: Build and Analyze (SonarQube)
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_PAT }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        # Ejecuta 'verify' para correr tests y luego el plugin de sonar
+        # Si ya pusiste las propiedades en el pom.xml, este comando las leerá automáticamente
+        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=isabelaocampos_Proyecto-Final-Ingeniera-de-Software-V
+      # -------------------------------------------
       # 2. Compilación y Pruebas Unitarias
       - name: Build & Test
         run: mvn clean package -DskipTests
