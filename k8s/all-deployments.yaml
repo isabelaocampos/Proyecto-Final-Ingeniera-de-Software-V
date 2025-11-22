@@ -229,9 +229,11 @@ spec:
         - name: SPRING_DATASOURCE_PASSWORD
           value: "SecurePassword123!" 
         - name: SPRING_JPA_DATABASE_PLATFORM
-          value: "org.hibernate.dialect.MySQL5InnoDBDialect"
+          value: "org.hibernate.dialect.MySQL8Dialect"
         - name: SPRING_JPA_HIBERNATE_DDL_AUTO
           value: "update"
+        - name: SPRING_FLYWAY_ENABLED
+          value: "false"
 
         - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
           value: "true"
@@ -306,9 +308,11 @@ spec:
         - name: SPRING_DATASOURCE_PASSWORD
           value: "SecurePassword123!" 
         - name: SPRING_JPA_DATABASE_PLATFORM
-          value: "org.hibernate.dialect.MySQL5InnoDBDialect"
+          value: "org.hibernate.dialect.MySQL8Dialect"
         - name: SPRING_JPA_HIBERNATE_DDL_AUTO
           value: "update"
+        - name: SPRING_FLYWAY_ENABLED
+          value: "false"
 
         - name: JAVA_TOOL_OPTIONS
           value: "-Deureka.client.serviceUrl.defaultZone=http://service-discovery:8761/eureka/ -Dspring.cloud.config.uri=http://cloud-config:9296"
@@ -376,9 +380,11 @@ spec:
         - name: SPRING_DATASOURCE_PASSWORD
           value: "SecurePassword123!" 
         - name: SPRING_JPA_DATABASE_PLATFORM
-          value: "org.hibernate.dialect.MySQL5InnoDBDialect"
+          value: "org.hibernate.dialect.MySQL8Dialect"
         - name: SPRING_JPA_HIBERNATE_DDL_AUTO
           value: "update"
+        - name: SPRING_FLYWAY_ENABLED
+          value: "false"
 
         - name: JAVA_TOOL_OPTIONS
           value: "-Deureka.client.serviceUrl.defaultZone=http://service-discovery:8761/eureka/ -Dspring.cloud.config.uri=http://cloud-config:9296"
@@ -446,9 +452,11 @@ spec:
         - name: SPRING_DATASOURCE_PASSWORD
           value: "SecurePassword123!" 
         - name: SPRING_JPA_DATABASE_PLATFORM
-          value: "org.hibernate.dialect.MySQL5InnoDBDialect"
+          value: "org.hibernate.dialect.MySQL8Dialect"
         - name: SPRING_JPA_HIBERNATE_DDL_AUTO
           value: "update"
+        - name: SPRING_FLYWAY_ENABLED
+          value: "false"
 
         - name: JAVA_TOOL_OPTIONS
           value: "-Deureka.client.serviceUrl.defaultZone=http://service-discovery:8761/eureka/ -Dspring.cloud.config.uri=http://cloud-config:9296"
@@ -516,9 +524,11 @@ spec:
         - name: SPRING_DATASOURCE_PASSWORD
           value: "SecurePassword123!" 
         - name: SPRING_JPA_DATABASE_PLATFORM
-          value: "org.hibernate.dialect.MySQL5InnoDBDialect"
+          value: "org.hibernate.dialect.MySQL8Dialect"
         - name: SPRING_JPA_HIBERNATE_DDL_AUTO
           value: "update"
+        - name: SPRING_FLYWAY_ENABLED
+          value: "false"
 
         - name: JAVA_TOOL_OPTIONS
           value: "-Deureka.client.serviceUrl.defaultZone=http://service-discovery:8761/eureka/ -Dspring.cloud.config.uri=http://cloud-config:9296"
@@ -586,9 +596,11 @@ spec:
         - name: SPRING_DATASOURCE_PASSWORD
           value: "SecurePassword123!" 
         - name: SPRING_JPA_DATABASE_PLATFORM
-          value: "org.hibernate.dialect.MySQL5InnoDBDialect"
+          value: "org.hibernate.dialect.MySQL8Dialect"
         - name: SPRING_JPA_HIBERNATE_DDL_AUTO
           value: "update"
+        - name: SPRING_FLYWAY_ENABLED
+          value: "false"
 
         - name: JAVA_TOOL_OPTIONS
           value: "-Deureka.client.serviceUrl.defaultZone=http://service-discovery:8761/eureka/ -Dspring.cloud.config.uri=http://cloud-config:9296"
