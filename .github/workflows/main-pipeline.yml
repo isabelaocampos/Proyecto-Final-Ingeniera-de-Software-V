@@ -147,20 +147,20 @@ jobs:
 
       - name: Deploy to Kubernetes
         run: |
-          # 1. Reemplazar imagen con la versión nueva en los YAMLs
-          sed -i "s|:latest|:${{ needs.ci-check.outputs.new_version }}|g" k8s/all-deployments.yaml
-          
-          # 2. ESTRATEGIA DE AHORRO DE RAM: Limpieza agresiva
-          echo "🧹 Borrando despliegues anteriores para liberar memoria..."
-          # El '|| true' hace que no falle si es la primera vez y no hay nada que borrar
+          # 1. Limpieza agresiva (Sin sed)
+          echo "🧹 Borrando despliegues anteriores..."
           kubectl delete -f k8s/all-deployments.yaml --ignore-not-found=true || true
           
-          echo "⏳ Esperando 20s para que los pods mueran completamente..."
+          echo "⏳ Esperando 20s..."
           sleep 20
           
-          # 3. Aplicar en limpio
+          # 2. Desplegar la versión 'latest' (que ya está en el archivo YAML original)
           echo "🚀 Desplegando nueva versión..."
           kubectl apply -f k8s/all-deployments.yaml
+          
+          # 3. Forzar reinicio para asegurar imagen fresca
+          kubectl rollout restart deployment
+
       # --- NUEVO PASO: AUDITORÍA DE CALIDAD ---
       - name: Verify Deployment Health
         run: |
@@ -210,20 +210,19 @@ jobs:
 
       - name: Deploy to Kubernetes
         run: |
-          # 1. Reemplazar imagen con la versión nueva en los YAMLs
-          sed -i "s|:latest|:${{ needs.ci-check.outputs.new_version }}|g" k8s/all-deployments.yaml
-          
-          # 2. ESTRATEGIA DE AHORRO DE RAM: Limpieza agresiva
-          echo "🧹 Borrando despliegues anteriores para liberar memoria..."
-          # El '|| true' hace que no falle si es la primera vez y no hay nada que borrar
+          # 1. Limpieza agresiva (Sin sed)
+          echo "🧹 Borrando despliegues anteriores..."
           kubectl delete -f k8s/all-deployments.yaml --ignore-not-found=true || true
           
-          echo "⏳ Esperando 20s para que los pods mueran completamente..."
+          echo "⏳ Esperando 20s..."
           sleep 20
           
-          # 3. Aplicar en limpio
+          # 2. Desplegar la versión 'latest' (que ya está en el archivo YAML original)
           echo "🚀 Desplegando nueva versión..."
           kubectl apply -f k8s/all-deployments.yaml
+          
+          # 3. Forzar reinicio para asegurar imagen fresca
+          kubectl rollout restart deployment
       
       # --- NUEVO PASO: AUDITORÍA DE CALIDAD ---
       - name: Verify Deployment Health
