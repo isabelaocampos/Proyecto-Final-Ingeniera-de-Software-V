@@ -147,19 +147,31 @@ jobs:
 
       - name: Deploy to Kubernetes
         run: |
-          # 1. Limpieza agresiva (Sin sed)
-          echo "🧹 Borrando despliegues anteriores..."
-          kubectl delete -f k8s/all-deployments.yaml --ignore-not-found=true || true
+          # 1. Limpieza AGRESIVA (Matar todo lo que exista)
+          echo "💣 DESTRUYENDO deployment anterior para liberar RAM..."
+          kubectl delete deployment --all --ignore-not-found=true
+          kubectl delete service --all --ignore-not-found=true
           
-          echo "⏳ Esperando 20s..."
-          sleep 20
-          
-          # 2. Desplegar la versión 'latest' (que ya está en el archivo YAML original)
+          # Esperar a que mueran de verdad (Polling)
+          echo "⏳ Esperando a que el clúster se vacíe..."
+          for i in {1..30}; do
+            count=$(kubectl get pods --no-headers | wc -l)
+            if [ "$count" -eq "0" ]; then
+              echo "✅ Clúster vacío. Listo para desplegar."
+              break
+            fi
+            echo "Todavía hay $count pods vivos... esperando..."
+            sleep 5
+          done
+
+          # 2. Desplegar en limpio
           echo "🚀 Desplegando nueva versión..."
+          # Reemplazar imagen por la versión específica (si usas versionado) o dejar latest
+          # sed -i "s|:latest|:${{ needs.ci-check.outputs.new_version }}|g" k8s/all-deployments.yaml
+          
           kubectl apply -f k8s/all-deployments.yaml
           
-          # 3. Forzar reinicio para asegurar imagen fresca
-          kubectl rollout restart deployment
+          # No necesitamos 'rollout restart' porque acabamos de crear todo de cero
 
       # --- NUEVO PASO: AUDITORÍA DE CALIDAD ---
       - name: Verify Deployment Health
@@ -210,19 +222,31 @@ jobs:
 
       - name: Deploy to Kubernetes
         run: |
-          # 1. Limpieza agresiva (Sin sed)
-          echo "🧹 Borrando despliegues anteriores..."
-          kubectl delete -f k8s/all-deployments.yaml --ignore-not-found=true || true
+          # 1. Limpieza AGRESIVA (Matar todo lo que exista)
+          echo "💣 DESTRUYENDO deployment anterior para liberar RAM..."
+          kubectl delete deployment --all --ignore-not-found=true
+          kubectl delete service --all --ignore-not-found=true
           
-          echo "⏳ Esperando 20s..."
-          sleep 20
-          
-          # 2. Desplegar la versión 'latest' (que ya está en el archivo YAML original)
+          # Esperar a que mueran de verdad (Polling)
+          echo "⏳ Esperando a que el clúster se vacíe..."
+          for i in {1..30}; do
+            count=$(kubectl get pods --no-headers | wc -l)
+            if [ "$count" -eq "0" ]; then
+              echo "✅ Clúster vacío. Listo para desplegar."
+              break
+            fi
+            echo "Todavía hay $count pods vivos... esperando..."
+            sleep 5
+          done
+
+          # 2. Desplegar en limpio
           echo "🚀 Desplegando nueva versión..."
+          # Reemplazar imagen por la versión específica (si usas versionado) o dejar latest
+          # sed -i "s|:latest|:${{ needs.ci-check.outputs.new_version }}|g" k8s/all-deployments.yaml
+          
           kubectl apply -f k8s/all-deployments.yaml
           
-          # 3. Forzar reinicio para asegurar imagen fresca
-          kubectl rollout restart deployment
+          # No necesitamos 'rollout restart' porque acabamos de crear todo de cero
       
       # --- NUEVO PASO: AUDITORÍA DE CALIDAD ---
       - name: Verify Deployment Health
