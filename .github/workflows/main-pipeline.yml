@@ -147,12 +147,20 @@ jobs:
 
       - name: Deploy to Kubernetes
         run: |
-          # 1. Aplicar cambios
-          kubectl apply -f k8s/all-deployments.yaml
+          # 1. Reemplazar imagen con la versión nueva en los YAMLs
+          sed -i "s|:latest|:${{ needs.ci-check.outputs.new_version }}|g" k8s/all-deployments.yaml
           
-          # 2. Forzar reinicio para tomar nuevas imágenes
-          kubectl rollout restart deployment
-      
+          # 2. ESTRATEGIA DE AHORRO DE RAM: Limpieza agresiva
+          echo "🧹 Borrando despliegues anteriores para liberar memoria..."
+          # El '|| true' hace que no falle si es la primera vez y no hay nada que borrar
+          kubectl delete -f k8s/all-deployments.yaml --ignore-not-found=true || true
+          
+          echo "⏳ Esperando 20s para que los pods mueran completamente..."
+          sleep 20
+          
+          # 3. Aplicar en limpio
+          echo "🚀 Desplegando nueva versión..."
+          kubectl apply -f k8s/all-deployments.yaml
       # --- NUEVO PASO: AUDITORÍA DE CALIDAD ---
       - name: Verify Deployment Health
         run: |
@@ -165,7 +173,7 @@ jobs:
             echo "⏳ Esperando a que $deploy esté estabilizado..."
             
             # Espera hasta 3 minutos por servicio. Si falla, rompe el pipeline.
-            if ! kubectl rollout status deployment/$deploy --timeout=180s; then
+            if ! kubectl rollout status deployment/$deploy --timeout=300s; then
               echo "❌ ERROR CRÍTICO: El servicio $deploy no logró arrancar."
               
               # Muestra logs para que no tengas que entrar a Azure a ver qué pasó
@@ -202,11 +210,20 @@ jobs:
 
       - name: Deploy to Kubernetes
         run: |
-          # 1. Aplicar cambios
-          kubectl apply -f k8s/all-deployments.yaml
+          # 1. Reemplazar imagen con la versión nueva en los YAMLs
+          sed -i "s|:latest|:${{ needs.ci-check.outputs.new_version }}|g" k8s/all-deployments.yaml
           
-          # 2. Forzar reinicio para tomar nuevas imágenes
-          kubectl rollout restart deployment
+          # 2. ESTRATEGIA DE AHORRO DE RAM: Limpieza agresiva
+          echo "🧹 Borrando despliegues anteriores para liberar memoria..."
+          # El '|| true' hace que no falle si es la primera vez y no hay nada que borrar
+          kubectl delete -f k8s/all-deployments.yaml --ignore-not-found=true || true
+          
+          echo "⏳ Esperando 20s para que los pods mueran completamente..."
+          sleep 20
+          
+          # 3. Aplicar en limpio
+          echo "🚀 Desplegando nueva versión..."
+          kubectl apply -f k8s/all-deployments.yaml
       
       # --- NUEVO PASO: AUDITORÍA DE CALIDAD ---
       - name: Verify Deployment Health
@@ -220,7 +237,7 @@ jobs:
             echo "⏳ Esperando a que $deploy esté estabilizado..."
             
             # Espera hasta 3 minutos por servicio. Si falla, rompe el pipeline.
-            if ! kubectl rollout status deployment/$deploy --timeout=180s; then
+            if ! kubectl rollout status deployment/$deploy --timeout=300s; then
               echo "❌ ERROR CRÍTICO: El servicio $deploy no logró arrancar."
               
               # Muestra logs para que no tengas que entrar a Azure a ver qué pasó
