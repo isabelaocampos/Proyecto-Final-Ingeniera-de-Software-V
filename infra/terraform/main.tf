@@ -24,11 +24,11 @@ locals {
 
   # Mapa de configuración: Define las reglas del juego
   env_settings = {
-    default = { count = 1, size = "Standard_B4ms" } # Por si acaso
+    default = { node_count = 1, vm_size = "Standard_B2ms" } 
     
     dev = {
       node_count = 1
-      vm_size    = "Standard_B4ms" # Barato
+      vm_size    = "Standard_B2ms" # Barato
     }
     
     stage = {
@@ -50,12 +50,14 @@ locals {
 module "aks_stack" {
   source = "./modules/aks-environment"
 
+  location      = "Central US"
+
   # Pasamos los valores dinámicos
   env_name      = local.env
   node_count    = local.selected_conf.node_count
   vm_size       = local.selected_conf.vm_size
   
-  # ¡CAMBIA ESTO! Pon tus iniciales para que el ACR sea único
+  
   acr_base_name = "ecommerceacrios25" 
 }
 

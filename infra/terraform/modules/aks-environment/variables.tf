@@ -6,7 +6,7 @@ variable "env_name" {
 variable "location" {
   description = "Región de Azure"
   type        = string
-  default     = "East US"
+  default     = "Central US"
 }
 
 variable "node_count" {

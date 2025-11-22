@@ -38,3 +38,33 @@ resource "azurerm_role_assignment" "aks_acr_pull" {
   scope                            = azurerm_container_registry.acr.id
   skip_service_principal_aad_check = true
 }
+
+resource "azurerm_mysql_flexible_server" "mysql" {
+  name                   = "mysql-${var.env_name}-${var.acr_base_name}"
+  resource_group_name    = azurerm_resource_group.rg.name
+  location               = azurerm_resource_group.rg.location
+  administrator_login    = "adminuser"
+  administrator_password = "SecurePassword123!"
+  sku_name               = "B_Standard_B1ms"
+  version                = "5.7"
+  
+  storage {
+    size_gb = 20
+  }
+}
+
+resource "azurerm_mysql_flexible_server_firewall_rule" "allow_azure_services" {
+  name                = "allow-azure-services"
+  resource_group_name = azurerm_resource_group.rg.name
+  server_name         = azurerm_mysql_flexible_server.mysql.name
+  start_ip_address    = "0.0.0.0"
+  end_ip_address      = "0.0.0.0"
+}
+
+resource "azurerm_mysql_flexible_database" "ecommerce_db" {
+  name                = "ecommerce_db"
+  resource_group_name = azurerm_resource_group.rg.name
+  server_name         = azurerm_mysql_flexible_server.mysql.name
+  charset             = "utf8"
+  collation           = "utf8_unicode_ci"
+}
