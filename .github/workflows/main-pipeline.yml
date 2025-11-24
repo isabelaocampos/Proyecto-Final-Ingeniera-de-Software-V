@@ -33,6 +33,22 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
+      # --- ANÁLISIS CON SONARCLOUD ---
+      - name: Cache SonarCloud packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+      - name: Build and Analyze (SonarQube)
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_PAT }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        # Ejecuta 'verify' para correr tests y luego el plugin de sonar
+        # Si ya pusiste las propiedades en el pom.xml, este comando las leerá automáticamente
+        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=isabelaocampos_Proyecto-Final-Ingeniera-de-Software-V
+      # -------------------------------------------
       # 2. Compilación y Pruebas Unitarias
       - name: Build & Test
         run: mvn clean package -DskipTests
@@ -56,6 +72,18 @@ jobs:
           # --------------------------------------------------------------------
           WITH_V: true
           DEFAULT_BUMP: patch
+
+      # ... (después del paso 'Semantic Versioning')
+
+      # 5. Generar Release Notes Automáticos 
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        if: steps.semver.outputs.new_tag != '' # Solo si hay versión nueva
+        with:
+          tag_name: ${{ steps.semver.outputs.new_tag }}
+          name: Release ${{ steps.semver.outputs.new_tag }}
+          generate_release_notes: true 
+          token: ${{ secrets.MY_PAT }} # Usa tu token personal
 
     outputs:
       new_version: ${{ steps.semver.outputs.new_tag }}
@@ -119,10 +147,57 @@ jobs:
 
       - name: Deploy to Kubernetes
         run: |
-          kubectl apply -f k8s/all-deployments.yaml
+          # 1. Limpieza AGRESIVA (Matar todo lo que exista)
+          echo "💣 DESTRUYENDO deployment anterior para liberar RAM..."
+          kubectl delete deployment --all --ignore-not-found=true
+          kubectl delete service --all --ignore-not-found=true
+          
+          # Esperar a que mueran de verdad (Polling)
+          echo "⏳ Esperando a que el clúster se vacíe..."
+          for i in {1..30}; do
+            count=$(kubectl get pods --no-headers | wc -l)
+            if [ "$count" -eq "0" ]; then
+              echo "✅ Clúster vacío. Listo para desplegar."
+              break
+            fi
+            echo "Todavía hay $count pods vivos... esperando..."
+            sleep 5
+          done
 
-          # Forzamos reinicio para que descargue la nueva imagen 'latest'
-          kubectl rollout restart deployment
+          # 2. Desplegar en limpio
+          echo "🚀 Desplegando nueva versión..."
+          # Reemplazar imagen por la versión específica (si usas versionado) o dejar latest
+          # sed -i "s|:latest|:${{ needs.ci-check.outputs.new_version }}|g" k8s/all-deployments.yaml
+          
+          kubectl apply -f k8s/all-deployments.yaml
+          
+          # No necesitamos 'rollout restart' porque acabamos de crear todo de cero
+
+      # --- NUEVO PASO: AUDITORÍA DE CALIDAD ---
+      - name: Verify Deployment Health
+        run: |
+          echo "🕵️‍♀️ Iniciando verificación de salud de los microservicios..."
+          
+          # Lista de todos tus deployments (Asegúrate de que los nombres coincidan con tu YAML)
+          deployments="zipkin service-discovery cloud-config api-gateway product-service user-service order-service payment-service shipping-service favourite-service"
+          
+          for deploy in $deployments; do
+            echo "⏳ Esperando a que $deploy esté estabilizado..."
+            
+            # Espera hasta 3 minutos por servicio. Si falla, rompe el pipeline.
+            if ! kubectl rollout status deployment/$deploy --timeout=300s; then
+              echo "❌ ERROR CRÍTICO: El servicio $deploy no logró arrancar."
+              
+              # Muestra logs para que no tengas que entrar a Azure a ver qué pasó
+              echo "--- LOGS DE LA MUERTE ($deploy) ---"
+              kubectl logs -l app=$deploy --tail=50
+              echo "-----------------------------------"
+              
+              exit 1 # Esto fuerza al pipeline a ponerse ROJO
+            fi
+          done
+          
+          echo "✅ ¡ÉXITO! Todos los microservicios están Running y listos."
 
   # --- ETAPA 4: PROMOCIÓN A PROD (Manual) ---
   deploy-prod:
@@ -145,10 +220,59 @@ jobs:
           resource-group: "${{ env.RESOURCE_GROUP_BASE }}-prod"
           cluster-name: "${{ env.AKS_CLUSTER_BASE }}-prod"
 
-      - name: Deploy to Kubernetes (PROD)
+      - name: Deploy to Kubernetes
         run: |
-          sed -i "s|:latest|:${{ needs.ci-check.outputs.new_version }}|g" k8s/all-deployments.yaml
+          # 1. Limpieza AGRESIVA (Matar todo lo que exista)
+          echo "💣 DESTRUYENDO deployment anterior para liberar RAM..."
+          kubectl delete deployment --all --ignore-not-found=true
+          kubectl delete service --all --ignore-not-found=true
+          
+          # Esperar a que mueran de verdad (Polling)
+          echo "⏳ Esperando a que el clúster se vacíe..."
+          for i in {1..30}; do
+            count=$(kubectl get pods --no-headers | wc -l)
+            if [ "$count" -eq "0" ]; then
+              echo "✅ Clúster vacío. Listo para desplegar."
+              break
+            fi
+            echo "Todavía hay $count pods vivos... esperando..."
+            sleep 5
+          done
+
+          # 2. Desplegar en limpio
+          echo "🚀 Desplegando nueva versión..."
+          # Reemplazar imagen por la versión específica (si usas versionado) o dejar latest
+          # sed -i "s|:latest|:${{ needs.ci-check.outputs.new_version }}|g" k8s/all-deployments.yaml
+          
           kubectl apply -f k8s/all-deployments.yaml
+          
+          # No necesitamos 'rollout restart' porque acabamos de crear todo de cero
+      
+      # --- NUEVO PASO: AUDITORÍA DE CALIDAD ---
+      - name: Verify Deployment Health
+        run: |
+          echo "🕵️‍♀️ Iniciando verificación de salud de los microservicios..."
+          
+          # Lista de todos tus deployments (Asegúrate de que los nombres coincidan con tu YAML)
+          deployments="zipkin service-discovery cloud-config api-gateway product-service user-service order-service payment-service shipping-service favourite-service"
+          
+          for deploy in $deployments; do
+            echo "⏳ Esperando a que $deploy esté estabilizado..."
+            
+            # Espera hasta 3 minutos por servicio. Si falla, rompe el pipeline.
+            if ! kubectl rollout status deployment/$deploy --timeout=300s; then
+              echo "❌ ERROR CRÍTICO: El servicio $deploy no logró arrancar."
+              
+              # Muestra logs para que no tengas que entrar a Azure a ver qué pasó
+              echo "--- LOGS DE LA MUERTE ($deploy) ---"
+              kubectl logs -l app=$deploy --tail=50
+              echo "-----------------------------------"
+              
+              exit 1 # Esto fuerza al pipeline a ponerse ROJO
+            fi
+          done
+          
+          echo "✅ ¡ÉXITO! Todos los microservicios están Running y listos."
 
   # --- ETAPA 5: NOTIFICACIONES DE FALLO ---
   notify-failure:
