@@ -183,11 +183,12 @@ spec:
           initialDelaySeconds: 180
           periodSeconds: 20
           timeoutSeconds: 5
+          failureThreshold: 5
         readinessProbe:
           httpGet:
             path: /actuator/health/readiness
             port: 8080
-          initialDelaySeconds: 180
+          initialDelaySeconds: 120
           periodSeconds: 20
           timeoutSeconds: 5
         resources:
@@ -273,11 +274,12 @@ spec:
           initialDelaySeconds: 180
           periodSeconds: 20
           timeoutSeconds: 5
+          failureThreshold: 5
         readinessProbe:
           httpGet:
             path: /actuator/health/readiness
             port: 8500
-          initialDelaySeconds: 180
+          initialDelaySeconds: 120
           periodSeconds: 20
           timeoutSeconds: 5
         resources:
@@ -371,11 +373,12 @@ spec:
           initialDelaySeconds: 180
           periodSeconds: 20
           timeoutSeconds: 5
+          failureThreshold: 5
         readinessProbe:
           httpGet:
             path: /actuator/health/readiness
             port: 8700
-          initialDelaySeconds: 180
+          initialDelaySeconds: 120
           periodSeconds: 20
           timeoutSeconds: 5
         resources:
@@ -469,11 +472,12 @@ spec:
           initialDelaySeconds: 180
           periodSeconds: 20
           timeoutSeconds: 5
+          failureThreshold: 5
         readinessProbe:
           httpGet:
             path: /actuator/health/readiness
             port: 8300
-          initialDelaySeconds: 180
+          initialDelaySeconds: 120
           periodSeconds: 20
           timeoutSeconds: 5
         resources:
@@ -567,11 +571,12 @@ spec:
           initialDelaySeconds: 180
           periodSeconds: 20
           timeoutSeconds: 5
+          failureThreshold: 5
         readinessProbe:
           httpGet:
             path: /actuator/health/readiness
             port: 8400
-          initialDelaySeconds: 180
+          initialDelaySeconds: 120
           periodSeconds: 20
           timeoutSeconds: 5
         resources:
@@ -665,11 +670,12 @@ spec:
           initialDelaySeconds: 180
           periodSeconds: 20
           timeoutSeconds: 5
+          failureThreshold: 5
         readinessProbe:
           httpGet:
             path: /actuator/health/readiness
             port: 8600
-          initialDelaySeconds: 180
+          initialDelaySeconds: 120
           periodSeconds: 20
           timeoutSeconds: 5
         resources:
@@ -763,11 +769,12 @@ spec:
           initialDelaySeconds: 180
           periodSeconds: 20
           timeoutSeconds: 5
+          failureThreshold: 5
         readinessProbe:
           httpGet:
             path: /actuator/health/readiness
             port: 8800
-          initialDelaySeconds: 180
+          initialDelaySeconds: 120
           periodSeconds: 20
           timeoutSeconds: 5
         resources:
