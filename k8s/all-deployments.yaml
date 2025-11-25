@@ -178,19 +178,19 @@ spec:
           value: "true"
         livenessProbe:
           httpGet:
-            path: /actuator/health/liveness
+            path: /actuator/health
             port: 8080
           initialDelaySeconds: 300
           periodSeconds: 60
-          timeoutSeconds: 60
+          timeoutSeconds: 30
           failureThreshold: 10
         readinessProbe:
           httpGet:
-            path: /actuator/health/readiness
+            path: /actuator/health
             port: 8080
           initialDelaySeconds: 180
           periodSeconds: 60
-          timeoutSeconds: 60
+          timeoutSeconds: 30
           failureThreshold: 10
         resources:
           requests:
@@ -270,19 +270,19 @@ spec:
           value: "true"
         livenessProbe:
           httpGet:
-            path: /actuator/health/liveness
+            path: /actuator/health
             port: 8500
           initialDelaySeconds: 300
           periodSeconds: 60
-          timeoutSeconds: 60
+          timeoutSeconds: 30
           failureThreshold: 10
         readinessProbe:
           httpGet:
-            path: /actuator/health/readiness
+            path: /actuator/health
             port: 8500
           initialDelaySeconds: 180
           periodSeconds: 60
-          timeoutSeconds: 60
+          timeoutSeconds: 30
           failureThreshold: 10
         resources:
           requests:
@@ -370,19 +370,19 @@ spec:
           value: "true"
         livenessProbe:
           httpGet:
-            path: /actuator/health/liveness
+            path: /actuator/health
             port: 8700
           initialDelaySeconds: 300
           periodSeconds: 60
-          timeoutSeconds: 60
+          timeoutSeconds: 30
           failureThreshold: 10
         readinessProbe:
           httpGet:
-            path: /actuator/health/readiness
+            path: /actuator/health
             port: 8700
           initialDelaySeconds: 180
           periodSeconds: 60
-          timeoutSeconds: 60
+          timeoutSeconds: 30
           failureThreshold: 10
         resources:
           requests:
@@ -470,19 +470,19 @@ spec:
           value: "true"
         livenessProbe:
           httpGet:
-            path: /actuator/health/liveness
+            path: /actuator/health
             port: 8300
           initialDelaySeconds: 300
           periodSeconds: 60
-          timeoutSeconds: 60
+          timeoutSeconds: 30
           failureThreshold: 10
         readinessProbe:
           httpGet:
-            path: /actuator/health/readiness
+            path: /actuator/health
             port: 8300
           initialDelaySeconds: 180
           periodSeconds: 60
-          timeoutSeconds: 60
+          timeoutSeconds: 30
           failureThreshold: 10
         resources:
           requests:
@@ -570,19 +570,19 @@ spec:
           value: "true"
         livenessProbe:
           httpGet:
-            path: /actuator/health/liveness
+            path: /actuator/health
             port: 8400
           initialDelaySeconds: 300
           periodSeconds: 60
-          timeoutSeconds: 60
+          timeoutSeconds: 30
           failureThreshold: 10
         readinessProbe:
           httpGet:
-            path: /actuator/health/readiness
+            path: /actuator/health
             port: 8400
           initialDelaySeconds: 180
           periodSeconds: 60
-          timeoutSeconds: 60
+          timeoutSeconds: 30
           failureThreshold: 10
         resources:
           requests:
@@ -670,19 +670,19 @@ spec:
           value: "true"
         livenessProbe:
           httpGet:
-            path: /actuator/health/liveness
+            path: /actuator/health
             port: 8600
           initialDelaySeconds: 300
           periodSeconds: 60
-          timeoutSeconds: 60
+          timeoutSeconds: 30
           failureThreshold: 10
         readinessProbe:
           httpGet:
-            path: /actuator/health/readiness
+            path: /actuator/health
             port: 8600
           initialDelaySeconds: 180
           periodSeconds: 60
-          timeoutSeconds: 60
+          timeoutSeconds: 30
           failureThreshold: 10
         resources:
           requests:
@@ -770,19 +770,19 @@ spec:
           value: "true"
         livenessProbe:
           httpGet:
-            path: /actuator/health/liveness
+            path: /actuator/health
             port: 8800
           initialDelaySeconds: 300
           periodSeconds: 60
-          timeoutSeconds: 60
+          timeoutSeconds: 30
           failureThreshold: 10
         readinessProbe:
           httpGet:
-            path: /actuator/health/readiness
+            path: /actuator/health
             port: 8800
           initialDelaySeconds: 180
           periodSeconds: 60
-          timeoutSeconds: 60
+          timeoutSeconds: 30
           failureThreshold: 10
         resources:
           requests:
