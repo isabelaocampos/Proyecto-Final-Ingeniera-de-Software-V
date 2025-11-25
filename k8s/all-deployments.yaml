@@ -107,6 +107,8 @@ spec:
         env:
         - name: SPRING_PROFILES_ACTIVE
           value: "native"
+        - name: SPRING_CLOUD_COMPATIBILITY_VERIFIER_ENABLED
+          value: "false"
         resources:
           requests:
             memory: "256Mi"
@@ -159,7 +161,8 @@ spec:
         env:
         - name: SERVER_PORT
           value: "8080"
-
+        - name: SPRING_CLOUD_COMPATIBILITY_VERIFIER_ENABLED
+          value: "false"
         - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
           value: "true"
         - name: EUREKA_INSTANCE_IP_ADDRESS
@@ -341,6 +344,19 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
+        
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:mysql://mysql-dev-ecommerceacrios25.mysql.database.azure.com:3306/ecommerce_db?useSSL=true&requireSSL=false"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "adminuser"
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: "SecurePassword123!" 
+        - name: SPRING_JPA_DATABASE_PLATFORM
+          value: "org.hibernate.dialect.MySQL8Dialect"
+        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+          value: "update"
+        - name: SPRING_FLYWAY_ENABLED
+          value: "false"
 
         - name: JAVA_TOOL_OPTIONS
           value: "-Deureka.client.serviceUrl.defaultZone=http://service-discovery:8761/eureka/ -Dspring.cloud.config.uri=http://cloud-config:9296"
@@ -426,6 +442,20 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
+        
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:mysql://mysql-dev-ecommerceacrios25.mysql.database.azure.com:3306/ecommerce_db?useSSL=true&requireSSL=false"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "adminuser"
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: "SecurePassword123!" 
+        - name: SPRING_JPA_DATABASE_PLATFORM
+          value: "org.hibernate.dialect.MySQL8Dialect"
+        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+          value: "update"
+        - name: SPRING_FLYWAY_ENABLED
+          value: "false"
+
         - name: JAVA_TOOL_OPTIONS
           value: "-Deureka.client.serviceUrl.defaultZone=http://service-discovery:8761/eureka/ -Dspring.cloud.config.uri=http://cloud-config:9296"
         - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
@@ -510,6 +540,20 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
+        
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:mysql://mysql-dev-ecommerceacrios25.mysql.database.azure.com:3306/ecommerce_db?useSSL=true&requireSSL=false"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "adminuser"
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: "SecurePassword123!" 
+        - name: SPRING_JPA_DATABASE_PLATFORM
+          value: "org.hibernate.dialect.MySQL8Dialect"
+        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+          value: "update"
+        - name: SPRING_FLYWAY_ENABLED
+          value: "false"
+
         - name: JAVA_TOOL_OPTIONS
           value: "-Deureka.client.serviceUrl.defaultZone=http://service-discovery:8761/eureka/ -Dspring.cloud.config.uri=http://cloud-config:9296"
         - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
@@ -594,6 +638,20 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
+        
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:mysql://mysql-dev-ecommerceacrios25.mysql.database.azure.com:3306/ecommerce_db?useSSL=true&requireSSL=false"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "adminuser"
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: "SecurePassword123!" 
+        - name: SPRING_JPA_DATABASE_PLATFORM
+          value: "org.hibernate.dialect.MySQL8Dialect"
+        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+          value: "update"
+        - name: SPRING_FLYWAY_ENABLED
+          value: "false"
+
         - name: JAVA_TOOL_OPTIONS
           value: "-Deureka.client.serviceUrl.defaultZone=http://service-discovery:8761/eureka/ -Dspring.cloud.config.uri=http://cloud-config:9296"
         - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
@@ -678,6 +736,20 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
+        
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:mysql://mysql-dev-ecommerceacrios25.mysql.database.azure.com:3306/ecommerce_db?useSSL=true&requireSSL=false"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "adminuser"
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: "SecurePassword123!" 
+        - name: SPRING_JPA_DATABASE_PLATFORM
+          value: "org.hibernate.dialect.MySQL8Dialect"
+        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+          value: "update"
+        - name: SPRING_FLYWAY_ENABLED
+          value: "false"
+
         - name: JAVA_TOOL_OPTIONS
           value: "-Deureka.client.serviceUrl.defaultZone=http://service-discovery:8761/eureka/ -Dspring.cloud.config.uri=http://cloud-config:9296"
         - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
