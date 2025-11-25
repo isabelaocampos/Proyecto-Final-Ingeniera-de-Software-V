@@ -155,7 +155,7 @@ class OrderFlowE2ETest {
             .orderDate(LocalDateTime.now())
             .orderDesc("Test E2E Order - Complete Flow")
             .orderFee(150.00)
-            .cartId(testCart.getCartId())
+            // .cartId(testCart.getCartId()) // Campo no existe en OrderDto
             .build();
         
         String orderJson = objectMapper.writeValueAsString(newOrderDto);
@@ -337,7 +337,7 @@ class OrderFlowE2ETest {
                 .orderDate(LocalDateTime.now())
                 .orderDesc("E2E Order #" + i)
                 .orderFee(100.00 * i)
-                .cartId(testCart.getCartId())
+                // .cartId(testCart.getCartId()) // Campo no existe en OrderDto
                 .build();
             
             String orderJson = objectMapper.writeValueAsString(orderDto);
