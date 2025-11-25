@@ -169,11 +169,31 @@
 											<minimum>0.30</minimum>
 										</limit>
 									</limits>
+									<!-- Exclusiones: módulos sin lógica de negocio -->
+									<excludes>
+										<exclude>**/service-discovery/**</exclude>
+										<exclude>**/ServiceDiscoveryApplication.class</exclude>
+										<exclude>**/cloud-config/**</exclude>
+										<exclude>**/CloudConfigApplication.class</exclude>
+										<exclude>**/api-gateway/**</exclude>
+										<exclude>**/ApiGatewayApplication.class</exclude>
+									</excludes>
 								</rule>
 							</rules>
 						</configuration>
 					</execution>
 				</executions>
+				<configuration>
+					<!-- Exclusiones globales para todos los reportes -->
+					<excludes>
+						<exclude>**/service-discovery/**</exclude>
+						<exclude>**/ServiceDiscoveryApplication.class</exclude>
+						<exclude>**/cloud-config/**</exclude>
+						<exclude>**/CloudConfigApplication.class</exclude>
+						<exclude>**/api-gateway/**</exclude>
+						<exclude>**/ApiGatewayApplication.class</exclude>
+					</excludes>
+				</configuration>
 			</plugin>
 		</plugins>
 		<finalName>${project.artifactId}-v${project.version}</finalName>
