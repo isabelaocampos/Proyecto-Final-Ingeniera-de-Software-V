@@ -1,4 +1,4 @@
-# Configuración de pruebas para Product Service
+# Configuración de pruebas para Order Service
 spring:
   datasource:
     url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
@@ -21,6 +21,10 @@ spring:
 eureka:
   client:
     enabled: false
+
+# Desactivar Zipkin para pruebas
+spring.zipkin.enabled: false
+spring.sleuth.enabled: false
     
 # Logging para pruebas
 logging:
