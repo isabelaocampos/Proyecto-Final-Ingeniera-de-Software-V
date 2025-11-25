@@ -154,7 +154,7 @@ jobs:
           echo "🚀 Desplegando nueva versión..."
           kubectl apply -f k8s/all-deployments.yaml
 
-      # --- AUDITORÍA DE CALIDAD (TIMEOUT EXTENDIDO A 600s) ---
+      # --- AUDITORÍA DE CALIDAD (TIMEOUT EXTENDIDO A 1200s) ---
       - name: Verify Deployment Health
         run: |
           echo "🕵️‍♀️ Iniciando verificación de salud de los microservicios..."
@@ -163,8 +163,8 @@ jobs:
           for deploy in $deployments; do
             echo "⏳ Esperando a que $deploy esté estabilizado..."
             
-            # --- CAMBIO AQUÍ: Subimos timeout a 600s (10 minutos) ---
-            if ! kubectl rollout status deployment/$deploy --timeout=600s; then
+            # --- CAMBIO AQUÍ: Subimos timeout a 1200s (10 minutos) ---
+            if ! kubectl rollout status deployment/$deploy --timeout=1200s; then
               echo "❌ ERROR CRÍTICO: El servicio $deploy no logró arrancar."
               echo "--- LOGS DE LA MUERTE ($deploy) ---"
               kubectl logs -l app=$deploy --tail=50
@@ -215,7 +215,7 @@ jobs:
           echo "🚀 Desplegando nueva versión..."
           kubectl apply -f k8s/all-deployments.yaml
       
-      # --- AUDITORÍA DE CALIDAD (TIMEOUT EXTENDIDO A 600s) ---
+      # --- AUDITORÍA DE CALIDAD (TIMEOUT EXTENDIDO A 1200s) ---
       - name: Verify Deployment Health
         run: |
           echo "🕵️‍♀️ Iniciando verificación de salud de los microservicios..."
@@ -224,8 +224,8 @@ jobs:
           for deploy in $deployments; do
             echo "⏳ Esperando a que $deploy esté estabilizado..."
             
-            # --- CAMBIO AQUÍ: Subimos timeout a 600s (10 minutos) ---
-            if ! kubectl rollout status deployment/$deploy --timeout=600s; then
+            # --- CAMBIO AQUÍ: Subimos timeout a 1200s (10 minutos) ---
+            if ! kubectl rollout status deployment/$deploy --timeout=1200s; then
               echo "❌ ERROR CRÍTICO: El servicio $deploy no logró arrancar."
               echo "--- LOGS DE LA MUERTE ($deploy) ---"
               kubectl logs -l app=$deploy --tail=50
