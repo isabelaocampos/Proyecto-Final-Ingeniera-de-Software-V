@@ -1,5 +1,5 @@
 # ==========================================
-# 1. INFRAESTRUCTURA BASE (Zipkin, Eureka, Config)
+# 1. INFRAESTRUCTURA BASE (Zipkin, Eureka, Config) :)
 # ==========================================
 
 # --- Zipkin ---
@@ -172,6 +172,26 @@ spec:
 
         - name: JAVA_TOOL_OPTIONS
           value: "-Deureka.client.serviceUrl.defaultZone=http://service-discovery:8761/eureka/ -Dspring.cloud.config.uri=http://cloud-config:9296"
+        - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+          value: "health,info,prometheus,metrics"
+        - name: MANAGEMENT_METRICS_EXPORT_PROMETHEUS_ENABLED
+          value: "true"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8080
+          initialDelaySeconds: 300
+          periodSeconds: 60
+          timeoutSeconds: 60
+          failureThreshold: 10
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8080
+          initialDelaySeconds: 180
+          periodSeconds: 60
+          timeoutSeconds: 60
+          failureThreshold: 10
         resources:
           requests:
             memory: "256Mi"
@@ -230,8 +250,8 @@ spec:
           value: "SecurePassword123!" 
         - name: SPRING_JPA_DATABASE_PLATFORM
           value: "org.hibernate.dialect.MySQL8Dialect"
-        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
-          value: "update"
+        
+        
         - name: SPRING_FLYWAY_ENABLED
           value: "false"
 
@@ -244,6 +264,26 @@ spec:
 
         - name: JAVA_TOOL_OPTIONS
           value: "-Deureka.client.serviceUrl.defaultZone=http://service-discovery:8761/eureka/ -Dspring.cloud.config.uri=http://cloud-config:9296"
+        - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+          value: "health,info,prometheus,metrics"
+        - name: MANAGEMENT_METRICS_EXPORT_PROMETHEUS_ENABLED
+          value: "true"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8500
+          initialDelaySeconds: 300
+          periodSeconds: 60
+          timeoutSeconds: 60
+          failureThreshold: 10
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8500
+          initialDelaySeconds: 180
+          periodSeconds: 60
+          timeoutSeconds: 60
+          failureThreshold: 10
         resources:
           requests:
             memory: "256Mi"
@@ -292,8 +332,16 @@ spec:
         env:
         - name: SERVER_PORT
           value: "8700"
-        - name: SPRING_CLOUD_COMPATIBILITY_VERIFIER_ENABLED
-          value: "false"
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:mysql://mysql-dev-ecommerceacrios25.mysql.database.azure.com:3306/ecommerce_db?useSSL=true&requireSSL=false"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "adminuser"
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: "SecurePassword123!"
+        - name: SPRING_JPA_DATABASE_PLATFORM
+          value: "org.hibernate.dialect.MySQL5InnoDBDialect"
+        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+          value: "update"
         - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
           value: "true"
         - name: EUREKA_INSTANCE_IP_ADDRESS
@@ -316,6 +364,26 @@ spec:
 
         - name: JAVA_TOOL_OPTIONS
           value: "-Deureka.client.serviceUrl.defaultZone=http://service-discovery:8761/eureka/ -Dspring.cloud.config.uri=http://cloud-config:9296"
+        - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+          value: "health,info,prometheus,metrics"
+        - name: MANAGEMENT_METRICS_EXPORT_PROMETHEUS_ENABLED
+          value: "true"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8700
+          initialDelaySeconds: 300
+          periodSeconds: 60
+          timeoutSeconds: 60
+          failureThreshold: 10
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8700
+          initialDelaySeconds: 180
+          periodSeconds: 60
+          timeoutSeconds: 60
+          failureThreshold: 10
         resources:
           requests:
             memory: "256Mi"
@@ -364,8 +432,16 @@ spec:
         env:
         - name: SERVER_PORT
           value: "8300"
-        - name: SPRING_CLOUD_COMPATIBILITY_VERIFIER_ENABLED
-          value: "false"
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:mysql://mysql-dev-ecommerceacrios25.mysql.database.azure.com:3306/ecommerce_db?useSSL=true&requireSSL=false"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "adminuser"
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: "SecurePassword123!"
+        - name: SPRING_JPA_DATABASE_PLATFORM
+          value: "org.hibernate.dialect.MySQL5InnoDBDialect"
+        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+          value: "update"
         - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
           value: "true"
         - name: EUREKA_INSTANCE_IP_ADDRESS
@@ -388,6 +464,26 @@ spec:
 
         - name: JAVA_TOOL_OPTIONS
           value: "-Deureka.client.serviceUrl.defaultZone=http://service-discovery:8761/eureka/ -Dspring.cloud.config.uri=http://cloud-config:9296"
+        - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+          value: "health,info,prometheus,metrics"
+        - name: MANAGEMENT_METRICS_EXPORT_PROMETHEUS_ENABLED
+          value: "true"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8300
+          initialDelaySeconds: 300
+          periodSeconds: 60
+          timeoutSeconds: 60
+          failureThreshold: 10
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8300
+          initialDelaySeconds: 180
+          periodSeconds: 60
+          timeoutSeconds: 60
+          failureThreshold: 10
         resources:
           requests:
             memory: "256Mi"
@@ -436,8 +532,16 @@ spec:
         env:
         - name: SERVER_PORT
           value: "8400"
-        - name: SPRING_CLOUD_COMPATIBILITY_VERIFIER_ENABLED
-          value: "false"
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:mysql://mysql-dev-ecommerceacrios25.mysql.database.azure.com:3306/ecommerce_db?useSSL=true&requireSSL=false"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "adminuser"
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: "SecurePassword123!"
+        - name: SPRING_JPA_DATABASE_PLATFORM
+          value: "org.hibernate.dialect.MySQL5InnoDBDialect"
+        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+          value: "update"
         - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
           value: "true"
         - name: EUREKA_INSTANCE_IP_ADDRESS
@@ -460,6 +564,26 @@ spec:
 
         - name: JAVA_TOOL_OPTIONS
           value: "-Deureka.client.serviceUrl.defaultZone=http://service-discovery:8761/eureka/ -Dspring.cloud.config.uri=http://cloud-config:9296"
+        - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+          value: "health,info,prometheus,metrics"
+        - name: MANAGEMENT_METRICS_EXPORT_PROMETHEUS_ENABLED
+          value: "true"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8400
+          initialDelaySeconds: 300
+          periodSeconds: 60
+          timeoutSeconds: 60
+          failureThreshold: 10
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8400
+          initialDelaySeconds: 180
+          periodSeconds: 60
+          timeoutSeconds: 60
+          failureThreshold: 10
         resources:
           requests:
             memory: "256Mi"
@@ -508,8 +632,16 @@ spec:
         env:
         - name: SERVER_PORT
           value: "8600"
-        - name: SPRING_CLOUD_COMPATIBILITY_VERIFIER_ENABLED
-          value: "false"
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:mysql://mysql-dev-ecommerceacrios25.mysql.database.azure.com:3306/ecommerce_db?useSSL=true&requireSSL=false"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "adminuser"
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: "SecurePassword123!"
+        - name: SPRING_JPA_DATABASE_PLATFORM
+          value: "org.hibernate.dialect.MySQL5InnoDBDialect"
+        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+          value: "update"
         - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
           value: "true"
         - name: EUREKA_INSTANCE_IP_ADDRESS
@@ -532,6 +664,26 @@ spec:
 
         - name: JAVA_TOOL_OPTIONS
           value: "-Deureka.client.serviceUrl.defaultZone=http://service-discovery:8761/eureka/ -Dspring.cloud.config.uri=http://cloud-config:9296"
+        - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+          value: "health,info,prometheus,metrics"
+        - name: MANAGEMENT_METRICS_EXPORT_PROMETHEUS_ENABLED
+          value: "true"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8600
+          initialDelaySeconds: 300
+          periodSeconds: 60
+          timeoutSeconds: 60
+          failureThreshold: 10
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8600
+          initialDelaySeconds: 180
+          periodSeconds: 60
+          timeoutSeconds: 60
+          failureThreshold: 10
         resources:
           requests:
             memory: "256Mi"
@@ -580,8 +732,16 @@ spec:
         env:
         - name: SERVER_PORT
           value: "8800"
-        - name: SPRING_CLOUD_COMPATIBILITY_VERIFIER_ENABLED
-          value: "false"
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:mysql://mysql-dev-ecommerceacrios25.mysql.database.azure.com:3306/ecommerce_db?useSSL=true&requireSSL=false"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "adminuser"
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: "SecurePassword123!"
+        - name: SPRING_JPA_DATABASE_PLATFORM
+          value: "org.hibernate.dialect.MySQL5InnoDBDialect"
+        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+          value: "update"
         - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
           value: "true"
         - name: EUREKA_INSTANCE_IP_ADDRESS
@@ -604,6 +764,26 @@ spec:
 
         - name: JAVA_TOOL_OPTIONS
           value: "-Deureka.client.serviceUrl.defaultZone=http://service-discovery:8761/eureka/ -Dspring.cloud.config.uri=http://cloud-config:9296"
+        - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+          value: "health,info,prometheus,metrics"
+        - name: MANAGEMENT_METRICS_EXPORT_PROMETHEUS_ENABLED
+          value: "true"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8800
+          initialDelaySeconds: 300
+          periodSeconds: 60
+          timeoutSeconds: 60
+          failureThreshold: 10
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8800
+          initialDelaySeconds: 180
+          periodSeconds: 60
+          timeoutSeconds: 60
+          failureThreshold: 10
         resources:
           requests:
             memory: "256Mi"
