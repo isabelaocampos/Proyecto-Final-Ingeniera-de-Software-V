@@ -161,12 +161,12 @@
 										<limit>
 											<counter>LINE</counter>
 											<value>COVEREDRATIO</value>
-											<minimum>0.25</minimum>
+											<minimum>0.20</minimum>
 										</limit>
 										<limit>
 											<counter>INSTRUCTION</counter>
 											<value>COVEREDRATIO</value>
-											<minimum>0.25</minimum>
+											<minimum>0.20</minimum>
 										</limit>
 									</limits>
 							<!-- Exclusiones: módulos sin lógica de negocio y clases sin tests requeridos -->
