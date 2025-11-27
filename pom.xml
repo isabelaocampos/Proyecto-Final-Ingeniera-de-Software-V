@@ -169,8 +169,9 @@
 											<minimum>0.30</minimum>
 										</limit>
 									</limits>
-							<!-- Exclusiones: módulos sin lógica de negocio -->
+							<!-- Exclusiones: módulos sin lógica de negocio y clases sin tests requeridos -->
 							<excludes>
+								<!-- Módulos de infraestructura -->
 								<exclude>**/service-discovery/**</exclude>
 								<exclude>**/ServiceDiscoveryApplication.class</exclude>
 								<exclude>**/cloud-config/**</exclude>
@@ -182,6 +183,14 @@
 								<exclude>**/proxy/client/**</exclude>
 								<exclude>**/ProxyClientApplication*</exclude>
 								<exclude>com/selimhorri/app/proxyclient/**</exclude>
+								
+								<!-- Clases sin lógica de negocio (DTOs, Entities, Models, Config) -->
+								<exclude>**/dto/**</exclude>
+								<exclude>**/model/**</exclude>
+								<exclude>**/entity/**</exclude>
+								<exclude>**/domain/**</exclude>
+								<exclude>**/config/**</exclude>
+								<exclude>**/*Application.class</exclude>
 							</excludes>
 								</rule>
 							</rules>
@@ -191,6 +200,7 @@
 			<configuration>
 				<!-- Exclusiones globales para todos los reportes -->
 				<excludes>
+					<!-- Módulos de infraestructura sin lógica de negocio -->
 					<exclude>**/service-discovery/**</exclude>
 					<exclude>**/ServiceDiscoveryApplication.class</exclude>
 					<exclude>**/cloud-config/**</exclude>
@@ -202,6 +212,14 @@
 					<exclude>**/proxy/client/**</exclude>
 					<exclude>**/ProxyClientApplication*</exclude>
 					<exclude>com/selimhorri/app/proxyclient/**</exclude>
+					
+					<!-- Clases sin lógica de negocio (DTOs, Entities, Models, Config) -->
+					<exclude>**/dto/**</exclude>
+					<exclude>**/model/**</exclude>
+					<exclude>**/entity/**</exclude>
+					<exclude>**/domain/**</exclude>
+					<exclude>**/config/**</exclude>
+					<exclude>**/*Application.class</exclude>
 				</excludes>
 			</configuration>
 			</plugin>
