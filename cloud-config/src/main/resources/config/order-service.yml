@@ -47,10 +47,35 @@ resilience4j:
         sliding-window-size: 10
         wait-duration-in-open-state: 5s
         sliding-window-type: COUNT_BASED
+  
+  # NUEVOS PATRONES DE RESILIENCIA
+  # Pattern 1: Rate Limiter - Limita a 5 peticiones cada 10 segundos
+  ratelimiter:
+    instances:
+      orderService:
+        limit-for-period: 5
+        limit-refresh-period: 10s
+        timeout-duration: 0s
+        register-health-indicator: true
+        event-consumer-buffer-size: 100
+  
+  # Pattern 2: Retry - 3 intentos con espera de 500ms entre intentos
+  retry:
+    instances:
+      orderService:
+        max-attempts: 3
+        wait-duration: 500ms
+        enable-exponential-backoff: false
+        register-health-indicator: true
+        event-consumer-buffer-size: 100
 
 management:
   health:
     circuitbreakers:
+      enabled: true
+    ratelimiters:
+      enabled: true
+    retries:
       enabled: true
   endpoint:
     health:
