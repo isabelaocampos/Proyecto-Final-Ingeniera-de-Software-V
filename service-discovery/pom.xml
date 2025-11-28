@@ -17,6 +17,8 @@
 	<properties>
 		<java.version>11</java.version>
 		<spring-cloud.version>2021.0.8</spring-cloud.version>
+		<!-- Desactivar JaCoCo para este módulo de infraestructura -->
+		<jacoco.skip>true</jacoco.skip>
 	</properties>
 	
 	<dependencies>
