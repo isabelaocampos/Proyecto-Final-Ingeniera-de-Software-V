@@ -1,0 +1,194 @@
+package com.selimhorri.app.resource;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.hamcrest.Matchers.*;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.selimhorri.app.domain.Category;
+import com.selimhorri.app.domain.Product;
+import com.selimhorri.app.dto.ProductDto;
+import com.selimhorri.app.repository.CategoryRepository;
+import com.selimhorri.app.repository.ProductRepository;
+
+/**
+ * ENTREGABLE 2 - Prueba de Integración (Integration Test)
+ * Usa @SpringBootTest con base de datos H2 en memoria
+ * Para máquinas con RAM limitada (8GB)
+ */
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureMockMvc
+@ActiveProfiles("test")
+@TestPropertySource(properties = {
+    "spring.datasource.url=jdbc:h2:mem:testdb",
+    "spring.datasource.driver-class-name=org.h2.Driver",
+    "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect",
+    "spring.flyway.enabled=false",
+    "eureka.client.enabled=false",
+    "spring.cloud.config.enabled=false"
+})
+@Transactional
+@DisplayName("Product Controller - Integration Tests")
+class ProductControllerIntegrationTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private ProductRepository productRepository;
+
+    @Autowired
+    private CategoryRepository categoryRepository;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    private Category testCategory;
+    private Product testProduct1;
+    private Product testProduct2;
+
+    @BeforeEach
+    void setUp() {
+        // Limpiar base de datos
+        productRepository.deleteAll();
+        categoryRepository.deleteAll();
+
+        // Crear categoría de prueba
+        testCategory = Category.builder()
+            .categoryTitle("Test Electronics")
+            .imageUrl("test-category.jpg")
+            .build();
+        testCategory = categoryRepository.save(testCategory);
+
+        // Crear productos de prueba
+        testProduct1 = Product.builder()
+            .productTitle("Test Laptop")
+            .imageUrl("laptop.jpg")
+            .sku("TEST-LAP-001")
+            .priceUnit(999.99)
+            .quantity(15)
+            .category(testCategory)
+            .build();
+
+        testProduct2 = Product.builder()
+            .productTitle("Test Mouse")
+            .imageUrl("mouse.jpg")
+            .sku("TEST-MOU-002")
+            .priceUnit(29.99)
+            .quantity(100)
+            .category(testCategory)
+            .build();
+
+        testProduct1 = productRepository.save(testProduct1);
+        testProduct2 = productRepository.save(testProduct2);
+    }
+
+    @Test
+    @DisplayName("GET /api/products - Debe retornar todos los productos con status 200")
+    void testGetAllProducts_ShouldReturnStatus200() throws Exception {
+        mockMvc.perform(get("/api/products")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.collection", hasSize(2)))
+                .andExpect(jsonPath("$.collection[0].productTitle", is("Test Laptop")))
+                .andExpect(jsonPath("$.collection[1].productTitle", is("Test Mouse")))
+                .andExpect(jsonPath("$.collection[0].priceUnit", is(999.99)))
+                .andExpect(jsonPath("$.collection[1].quantity", is(100)));
+    }
+
+    @Test
+    @DisplayName("GET /api/products/{id} - Debe retornar producto específico con status 200")
+    void testGetProductById_WhenExists_ShouldReturnStatus200() throws Exception {
+        mockMvc.perform(get("/api/products/{productId}", testProduct1.getProductId())
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.productId", is(testProduct1.getProductId())))
+                .andExpect(jsonPath("$.productTitle", is("Test Laptop")))
+                .andExpect(jsonPath("$.sku", is("TEST-LAP-001")))
+                .andExpect(jsonPath("$.priceUnit", is(999.99)))
+                .andExpect(jsonPath("$.quantity", is(15)));
+    }
+
+    @Test
+    @DisplayName("POST /api/products - Debe crear nuevo producto con status 200")
+    void testCreateProduct_ShouldReturnStatus200() throws Exception {
+        ProductDto newProduct = ProductDto.builder()
+            .productTitle("New Test Product")
+            .imageUrl("new-product.jpg")
+            .sku("NEW-PRD-003")
+            .priceUnit(149.99)
+            .quantity(25)
+            .categoryId(testCategory.getCategoryId())
+            .build();
+
+        mockMvc.perform(post("/api/products")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(newProduct)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.productTitle", is("New Test Product")))
+                .andExpect(jsonPath("$.sku", is("NEW-PRD-003")))
+                .andExpect(jsonPath("$.priceUnit", is(149.99)));
+    }
+
+    @Test
+    @DisplayName("PUT /api/products - Debe actualizar producto existente con status 200")
+    void testUpdateProduct_ShouldReturnStatus200() throws Exception {
+        ProductDto updatedProduct = ProductDto.builder()
+            .productId(testProduct1.getProductId())
+            .productTitle("Updated Laptop")
+            .imageUrl("updated-laptop.jpg")
+            .sku("TEST-LAP-001")
+            .priceUnit(899.99)  // Precio actualizado
+            .quantity(20)        // Cantidad actualizada
+            .categoryId(testCategory.getCategoryId())
+            .build();
+
+        mockMvc.perform(put("/api/products")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(updatedProduct)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.productTitle", is("Updated Laptop")))
+                .andExpect(jsonPath("$.priceUnit", is(899.99)))
+                .andExpect(jsonPath("$.quantity", is(20)));
+    }
+
+    @Test
+    @DisplayName("DELETE /api/products/{id} - Debe eliminar producto con status 200")
+    void testDeleteProduct_ShouldReturnStatus200() throws Exception {
+        mockMvc.perform(delete("/api/products/{productId}", testProduct1.getProductId())
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        // Verificar que el producto fue eliminado
+        mockMvc.perform(get("/api/products")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.collection", hasSize(1)))
+                .andExpect(jsonPath("$.collection[0].productTitle", is("Test Mouse")));
+    }
+
+    @Test
+    @DisplayName("GET /api/products - Lista vacía debe retornar status 200 con colección vacía")
+    void testGetAllProducts_WhenEmpty_ShouldReturnEmptyCollection() throws Exception {
+        productRepository.deleteAll();
+
+        mockMvc.perform(get("/api/products")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.collection", hasSize(0)));
+    }
+}
