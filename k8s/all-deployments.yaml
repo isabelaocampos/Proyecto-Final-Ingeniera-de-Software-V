@@ -24,11 +24,11 @@ spec:
         - containerPort: 9411
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "100m"
+            cpu: "1m"
+            memory: "128Mi"
           limits:
-            memory: "512Mi"
             cpu: "500m"
+            memory: "512Mi"
 ---
 apiVersion: v1
 kind: Service
@@ -65,11 +65,11 @@ spec:
         - containerPort: 8761
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "100m"
+            cpu: "1m"
+            memory: "128Mi"
           limits:
-            memory: "512Mi"
             cpu: "500m"
+            memory: "512Mi"
 ---
 apiVersion: v1
 kind: Service
@@ -111,11 +111,11 @@ spec:
           value: "false"
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "100m"
+            cpu: "1m"
+            memory: "128Mi"
           limits:
-            memory: "512Mi"
             cpu: "500m"
+            memory: "512Mi"
 ---
 apiVersion: v1
 kind: Service
@@ -194,11 +194,11 @@ spec:
           failureThreshold: 10
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "100m"
+            cpu: "1m"
+            memory: "128Mi"
           limits:
-            memory: "512Mi"
             cpu: "500m"
+            memory: "512Mi"
 ---
 apiVersion: v1
 kind: Service
@@ -270,7 +270,7 @@ spec:
           value: "true"
         livenessProbe:
           httpGet:
-            path: /actuator/health
+            path: /product-service/actuator/health
             port: 8500
           initialDelaySeconds: 300
           periodSeconds: 60
@@ -278,7 +278,7 @@ spec:
           failureThreshold: 10
         readinessProbe:
           httpGet:
-            path: /actuator/health
+            path: /product-service/actuator/health
             port: 8500
           initialDelaySeconds: 180
           periodSeconds: 60
@@ -286,11 +286,11 @@ spec:
           failureThreshold: 10
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "100m"
+            cpu: "1m"
+            memory: "128Mi"
           limits:
-            memory: "512Mi"
             cpu: "500m"
+            memory: "512Mi"
 ---
 apiVersion: v1
 kind: Service
@@ -370,7 +370,7 @@ spec:
           value: "true"
         livenessProbe:
           httpGet:
-            path: /actuator/health
+            path: /user-service/actuator/health
             port: 8700
           initialDelaySeconds: 300
           periodSeconds: 60
@@ -378,7 +378,7 @@ spec:
           failureThreshold: 10
         readinessProbe:
           httpGet:
-            path: /actuator/health
+            path: /user-service/actuator/health
             port: 8700
           initialDelaySeconds: 180
           periodSeconds: 60
@@ -386,11 +386,11 @@ spec:
           failureThreshold: 10
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "100m"
+            cpu: "1m"
+            memory: "128Mi"
           limits:
-            memory: "512Mi"
             cpu: "500m"
+            memory: "512Mi"
 ---
 apiVersion: v1
 kind: Service
@@ -470,7 +470,7 @@ spec:
           value: "true"
         livenessProbe:
           httpGet:
-            path: /actuator/health
+            path: /order-service/actuator/health
             port: 8300
           initialDelaySeconds: 300
           periodSeconds: 60
@@ -478,7 +478,7 @@ spec:
           failureThreshold: 10
         readinessProbe:
           httpGet:
-            path: /actuator/health
+            path: /order-service/actuator/health
             port: 8300
           initialDelaySeconds: 180
           periodSeconds: 60
@@ -486,11 +486,11 @@ spec:
           failureThreshold: 10
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "100m"
+            cpu: "1m"
+            memory: "128Mi"
           limits:
-            memory: "512Mi"
             cpu: "500m"
+            memory: "512Mi"
 ---
 apiVersion: v1
 kind: Service
@@ -570,7 +570,7 @@ spec:
           value: "true"
         livenessProbe:
           httpGet:
-            path: /actuator/health
+            path: /payment-service/actuator/health
             port: 8400
           initialDelaySeconds: 300
           periodSeconds: 60
@@ -578,7 +578,7 @@ spec:
           failureThreshold: 10
         readinessProbe:
           httpGet:
-            path: /actuator/health
+            path: /payment-service/actuator/health
             port: 8400
           initialDelaySeconds: 180
           periodSeconds: 60
@@ -586,11 +586,11 @@ spec:
           failureThreshold: 10
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "100m"
+            cpu: "1m"
+            memory: "128Mi"
           limits:
-            memory: "512Mi"
             cpu: "500m"
+            memory: "512Mi"
 ---
 apiVersion: v1
 kind: Service
@@ -670,7 +670,7 @@ spec:
           value: "true"
         livenessProbe:
           httpGet:
-            path: /actuator/health
+            path: /shipping-service/actuator/health
             port: 8600
           initialDelaySeconds: 300
           periodSeconds: 60
@@ -678,7 +678,7 @@ spec:
           failureThreshold: 10
         readinessProbe:
           httpGet:
-            path: /actuator/health
+            path: /shipping-service/actuator/health
             port: 8600
           initialDelaySeconds: 180
           periodSeconds: 60
@@ -686,11 +686,11 @@ spec:
           failureThreshold: 10
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "100m"
+            cpu: "1m"
+            memory: "128Mi"
           limits:
-            memory: "512Mi"
             cpu: "500m"
+            memory: "512Mi"
 ---
 apiVersion: v1
 kind: Service
@@ -770,7 +770,7 @@ spec:
           value: "true"
         livenessProbe:
           httpGet:
-            path: /actuator/health
+            path: /favourite-service/actuator/health
             port: 8800
           initialDelaySeconds: 300
           periodSeconds: 60
@@ -778,7 +778,7 @@ spec:
           failureThreshold: 10
         readinessProbe:
           httpGet:
-            path: /actuator/health
+            path: /favourite-service/actuator/health
             port: 8800
           initialDelaySeconds: 180
           periodSeconds: 60
@@ -786,11 +786,11 @@ spec:
           failureThreshold: 10
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "100m"
+            cpu: "1m"
+            memory: "128Mi"
           limits:
-            memory: "512Mi"
             cpu: "500m"
+            memory: "512Mi"
 ---
 apiVersion: v1
 kind: Service
