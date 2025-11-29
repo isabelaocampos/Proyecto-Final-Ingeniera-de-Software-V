@@ -158,6 +158,8 @@ jobs:
     runs-on: ubuntu-latest
     environment: 
       name: prod
+      # Opcional: Pon aquí la URL de tu gateway si quieres que salga en GitHub
+      url: http://4.239.160.144:8080/actuator/health 
     if: github.ref == 'refs/heads/master'
     steps:
       - uses: actions/checkout@v3
@@ -167,16 +169,53 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Set AKS Context (PROD)
+      # TRUCO: Conectamos al clúster de DEV (porque PROD no existe físicamente)
+      - name: Set AKS Context (Using DEV infrastructure as PROD)
         uses: azure/aks-set-context@v3
         with:
-          resource-group: "${{ env.RESOURCE_GROUP_BASE }}-prod"
-          cluster-name: "${{ env.AKS_CLUSTER_BASE }}-prod"
+          resource-group: "${{ env.RESOURCE_GROUP_BASE }}-dev"
+          cluster-name: "${{ env.AKS_CLUSTER_BASE }}-dev"
 
-      - name: Deploy to Kubernetes (PROD)
+      # LIMPIEZA: "Matamos" la versión anterior para liberar RAM y CPU
+      - name: Clean Environment for Production Release
         run: |
-          sed -i "s|:latest|:${{ needs.ci-check.outputs.new_version }}|g" k8s/all-deployments.yaml
+          echo "⚠️  PREPARANDO PROD: Limpiando recursos existentes..."
+          kubectl delete deployment --all --ignore-not-found=true
+          kubectl delete service --all --ignore-not-found=true
+          
+          echo "⏳ Esperando a que el clúster libere la memoria..."
+          # Esperamos hasta que no queden pods (o máx 30 intentos)
+          for i in {1..30}; do
+            count=$(kubectl get pods --no-headers 2>/dev/null | wc -l)
+            if [ "$count" -eq "0" ]; then
+              echo "✅ Clúster limpio. Memoria liberada."
+              break
+            fi
+            echo "Todavía hay pods terminando... ($count restantes)"
+            sleep 5
+          done
+
+      # DESPLIEGUE: Instalamos la versión "Gold"
+      - name: Deploy to Production
+        run: |
+          echo "🚀 Desplegando versión maestra en Producción..."
           kubectl apply -f k8s/all-deployments.yaml
+      
+      # VERIFICACIÓN: Nos aseguramos que todo subió bien
+      - name: Verify Production Health
+        run: |
+          echo "🕵️‍♀️ Verificando salud de Producción..."
+          deployments="zipkin service-discovery cloud-config api-gateway product-service user-service order-service payment-service shipping-service favourite-service"
+          
+          for deploy in $deployments; do
+            # Timeout generoso de 10 mins por si Azure está lento
+            if ! kubectl rollout status deployment/$deploy --timeout=600s; then
+              echo "❌ ERROR: $deploy falló en arrancar en PROD."
+              kubectl logs -l app=$deploy --tail=20
+              exit 1 
+            fi
+          done
+          echo "✅ ¡DESPLIEGUE A PRODUCCIÓN EXITOSO!"
 
   # --- ETAPA 5: NOTIFICACIONES DE FALLO ---
   notify-failure:
