@@ -1,0 +1,5 @@
+spec:
+  tls:
+  - hosts:
+    - 4.239.214.93
+    secretName: gateway-tls-cert  
