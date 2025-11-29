@@ -1,0 +1,58 @@
+name: OPS - Start/Stop Environments (FinOps)
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Ambiente a controlar'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+        - dev
+        - prod
+      action:
+        description: 'Acción (Ahorro de Costos)'
+        required: true
+        default: 'stop'
+        type: choice
+        options:
+        - start
+        - stop
+
+jobs:
+  manage-infrastructure:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Execute FinOps Action (AKS + MySQL)
+        run: |
+          # 1. Definición de Nombres (Basado en tus comandos manuales)
+          # Se construyen dinámicamente según si eliges 'dev' o 'prod'
+          RG_NAME="ecommerce-rg-${{ inputs.environment }}"
+          AKS_NAME="ecommerce-aks-${{ inputs.environment }}"
+          DB_NAME="mysql-${{ inputs.environment }}-ecommerceacrios25"
+          
+          ACTION="${{ inputs.action }}"
+
+          echo "🚀 Iniciando secuencia de $ACTION..."
+          echo "🎯 Objetivo: Ambiente ${{ inputs.environment }}"
+          echo "📦 Recursos afectados: $AKS_NAME y $DB_NAME"
+
+          # --- PASO 1: BASE DE DATOS (MySQL Flexible Server) ---
+          # Ejecuta: az mysql flexible-server stop/start ...
+          echo "Processing MySQL Server..."
+          az mysql flexible-server $ACTION --name $DB_NAME --resource-group $RG_NAME --no-wait
+          echo "✅ Orden enviada a MySQL (Modo asíncrono)."
+
+          # --- PASO 2: CLÚSTER KUBERNETES (AKS) ---
+          # Ejecuta: az aks stop/start ...
+          echo "Processing AKS Cluster..."
+          az aks $ACTION --name $AKS_NAME --resource-group $RG_NAME --no-wait
+          echo "✅ Orden enviada a AKS (Modo asíncrono)."
+
+          echo "🏁 Operación FinOps completada con éxito."

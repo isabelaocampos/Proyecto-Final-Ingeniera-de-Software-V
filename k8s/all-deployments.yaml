@@ -1,0 +1,838 @@
+# ==========================================
+# 1. INFRAESTRUCTURA BASE (Zipkin, Eureka, Config) :)
+# ==========================================
+
+# --- Zipkin ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zipkin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zipkin
+  template:
+    metadata:
+      labels:
+        app: zipkin
+    spec:
+      containers:
+      - name: zipkin
+        image: openzipkin/zipkin
+        ports:
+        - containerPort: 9411
+        resources:
+          requests:
+            cpu: "1m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zipkin
+spec:
+  selector:
+    app: zipkin
+  ports:
+  - port: 9411
+    targetPort: 9411
+  type: ClusterIP
+
+---
+# --- Service Discovery (Eureka) ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service-discovery
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: service-discovery
+  template:
+    metadata:
+      labels:
+        app: service-discovery
+    spec:
+      containers:
+      - name: service-discovery
+        image: ecommerceacrios25dev.azurecr.io/service-discovery:latest
+        ports:
+        - containerPort: 8761
+        resources:
+          requests:
+            cpu: "1m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-discovery
+spec:
+  selector:
+    app: service-discovery
+  ports:
+  - port: 8761
+    targetPort: 8761
+  type: ClusterIP
+
+---
+# --- Cloud Config ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloud-config
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cloud-config
+  template:
+    metadata:
+      labels:
+        app: cloud-config
+    spec:
+      containers:
+      - name: cloud-config
+        image: ecommerceacrios25dev.azurecr.io/cloud-config:latest
+        ports:
+        - containerPort: 9296
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "native"
+        - name: SPRING_CLOUD_COMPATIBILITY_VERIFIER_ENABLED
+          value: "false"
+        resources:
+          requests:
+            cpu: "1m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cloud-config
+spec:
+  selector:
+    app: cloud-config
+  ports:
+  - port: 9296
+    targetPort: 9296
+  type: ClusterIP
+
+---
+# ==========================================
+# 2. MICROSERVICIOS (Con InitContainers)
+# ==========================================
+
+# --- API Gateway ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-gateway
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+    spec:
+      initContainers:
+      - name: wait-for-core
+        image: busybox
+        command: ['sh', '-c', 'until nc -z service-discovery 8761 && nc -z cloud-config 9296; do echo waiting for core services; sleep 2; done']
+      containers:
+      - name: api-gateway
+        image: ecommerceacrios25dev.azurecr.io/api-gateway:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: SERVER_PORT
+          value: "8080"
+        - name: SPRING_CLOUD_COMPATIBILITY_VERIFIER_ENABLED
+          value: "false"
+        - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+          value: "true"
+        - name: EUREKA_INSTANCE_IP_ADDRESS
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+
+        - name: JAVA_TOOL_OPTIONS
+          value: "-Deureka.client.serviceUrl.defaultZone=http://service-discovery:8761/eureka/ -Dspring.cloud.config.uri=http://cloud-config:9296"
+        - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+          value: "health,info,prometheus,metrics"
+        - name: MANAGEMENT_METRICS_EXPORT_PROMETHEUS_ENABLED
+          value: "true"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 300
+          periodSeconds: 60
+          timeoutSeconds: 30
+          failureThreshold: 10
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 180
+          periodSeconds: 60
+          timeoutSeconds: 30
+          failureThreshold: 10
+        resources:
+          requests:
+            cpu: "1m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway
+spec:
+  selector:
+    app: api-gateway
+  ports:
+  - port: 8080
+    targetPort: 8080
+  type: LoadBalancer
+
+---
+# --- Product Service ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: product-service
+  template:
+    metadata:
+      labels:
+        app: product-service
+    spec:
+      initContainers:
+      - name: wait-for-core
+        image: busybox
+        command: ['sh', '-c', 'until nc -z service-discovery 8761 && nc -z cloud-config 9296; do echo waiting for core services; sleep 2; done']
+      containers:
+      - name: product-service
+        image: ecommerceacrios25dev.azurecr.io/product-service:latest
+        ports:
+        - containerPort: 8500
+        env:
+        - name: SERVER_PORT
+          value: "8500"
+        - name: SPRING_CLOUD_COMPATIBILITY_VERIFIER_ENABLED
+          value: "false"
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:mysql://mysql-dev-ecommerceacrios25.mysql.database.azure.com:3306/ecommerce_db?useSSL=true&requireSSL=false"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "adminuser"
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: db-password 
+        - name: SPRING_JPA_DATABASE_PLATFORM
+          value: "org.hibernate.dialect.MySQL8Dialect"
+        
+        
+        - name: SPRING_FLYWAY_ENABLED
+          value: "false"
+
+        - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+          value: "true"
+        - name: EUREKA_INSTANCE_IP_ADDRESS
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+
+        - name: JAVA_TOOL_OPTIONS
+          value: "-Deureka.client.serviceUrl.defaultZone=http://service-discovery:8761/eureka/ -Dspring.cloud.config.uri=http://cloud-config:9296"
+        - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+          value: "health,info,prometheus,metrics"
+        - name: MANAGEMENT_METRICS_EXPORT_PROMETHEUS_ENABLED
+          value: "true"
+        livenessProbe:
+          httpGet:
+            path: /product-service/actuator/health
+            port: 8500
+          initialDelaySeconds: 300
+          periodSeconds: 60
+          timeoutSeconds: 30
+          failureThreshold: 10
+        readinessProbe:
+          httpGet:
+            path: /product-service/actuator/health
+            port: 8500
+          initialDelaySeconds: 180
+          periodSeconds: 60
+          timeoutSeconds: 30
+          failureThreshold: 10
+        resources:
+          requests:
+            cpu: "1m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: product-service
+spec:
+  selector:
+    app: product-service
+  ports:
+  - port: 8500
+    targetPort: 8500
+  type: ClusterIP
+
+---
+# --- User Service ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      initContainers:
+      - name: wait-for-core
+        image: busybox
+        command: ['sh', '-c', 'until nc -z service-discovery 8761 && nc -z cloud-config 9296; do echo waiting for core services; sleep 2; done']
+      containers:
+      - name: user-service
+        image: ecommerceacrios25dev.azurecr.io/user-service:latest
+        ports:
+        - containerPort: 8700
+        env:
+        - name: SERVER_PORT
+          value: "8700"
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:mysql://mysql-dev-ecommerceacrios25.mysql.database.azure.com:3306/ecommerce_db?useSSL=true&requireSSL=false"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "adminuser"
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: db-password
+        - name: SPRING_JPA_DATABASE_PLATFORM
+          value: "org.hibernate.dialect.MySQL5InnoDBDialect"
+        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+          value: "update"
+        - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+          value: "true"
+        - name: EUREKA_INSTANCE_IP_ADDRESS
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:mysql://mysql-dev-ecommerceacrios25.mysql.database.azure.com:3306/ecommerce_db?useSSL=true&requireSSL=false"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "adminuser"
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: db-password 
+        - name: SPRING_JPA_DATABASE_PLATFORM
+          value: "org.hibernate.dialect.MySQL8Dialect"
+        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+          value: "update"
+        - name: SPRING_FLYWAY_ENABLED
+          value: "false"
+
+        - name: JAVA_TOOL_OPTIONS
+          value: "-Deureka.client.serviceUrl.defaultZone=http://service-discovery:8761/eureka/ -Dspring.cloud.config.uri=http://cloud-config:9296"
+        - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+          value: "health,info,prometheus,metrics"
+        - name: MANAGEMENT_METRICS_EXPORT_PROMETHEUS_ENABLED
+          value: "true"
+        livenessProbe:
+          httpGet:
+            path: /user-service/actuator/health
+            port: 8700
+          initialDelaySeconds: 300
+          periodSeconds: 60
+          timeoutSeconds: 30
+          failureThreshold: 10
+        readinessProbe:
+          httpGet:
+            path: /user-service/actuator/health
+            port: 8700
+          initialDelaySeconds: 180
+          periodSeconds: 60
+          timeoutSeconds: 30
+          failureThreshold: 10
+        resources:
+          requests:
+            cpu: "1m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+spec:
+  selector:
+    app: user-service
+  ports:
+  - port: 8700
+    targetPort: 8700
+  type: ClusterIP
+
+---
+# --- Order Service ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: order-service
+  template:
+    metadata:
+      labels:
+        app: order-service
+    spec:
+      initContainers:
+      - name: wait-for-core
+        image: busybox
+        command: ['sh', '-c', 'until nc -z service-discovery 8761 && nc -z cloud-config 9296; do echo waiting for core services; sleep 2; done']
+      containers:
+      - name: order-service
+        image: ecommerceacrios25dev.azurecr.io/order-service:latest
+        ports:
+        - containerPort: 8300
+        env:
+        - name: SERVER_PORT
+          value: "8300"
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:mysql://mysql-dev-ecommerceacrios25.mysql.database.azure.com:3306/ecommerce_db?useSSL=true&requireSSL=false"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "adminuser"
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: db-password
+        - name: SPRING_JPA_DATABASE_PLATFORM
+          value: "org.hibernate.dialect.MySQL5InnoDBDialect"
+        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+          value: "update"
+        - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+          value: "true"
+        - name: EUREKA_INSTANCE_IP_ADDRESS
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:mysql://mysql-dev-ecommerceacrios25.mysql.database.azure.com:3306/ecommerce_db?useSSL=true&requireSSL=false"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "adminuser"
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: db-password 
+        - name: SPRING_JPA_DATABASE_PLATFORM
+          value: "org.hibernate.dialect.MySQL8Dialect"
+        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+          value: "update"
+        - name: SPRING_FLYWAY_ENABLED
+          value: "false"
+
+        - name: JAVA_TOOL_OPTIONS
+          value: "-Deureka.client.serviceUrl.defaultZone=http://service-discovery:8761/eureka/ -Dspring.cloud.config.uri=http://cloud-config:9296"
+        - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+          value: "health,info,prometheus,metrics"
+        - name: MANAGEMENT_METRICS_EXPORT_PROMETHEUS_ENABLED
+          value: "true"
+        livenessProbe:
+          httpGet:
+            path: /order-service/actuator/health
+            port: 8300
+          initialDelaySeconds: 300
+          periodSeconds: 60
+          timeoutSeconds: 30
+          failureThreshold: 10
+        readinessProbe:
+          httpGet:
+            path: /order-service/actuator/health
+            port: 8300
+          initialDelaySeconds: 180
+          periodSeconds: 60
+          timeoutSeconds: 30
+          failureThreshold: 10
+        resources:
+          requests:
+            cpu: "1m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service
+spec:
+  selector:
+    app: order-service
+  ports:
+  - port: 8300
+    targetPort: 8300
+  type: ClusterIP
+
+---
+# --- Payment Service ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payment-service
+  template:
+    metadata:
+      labels:
+        app: payment-service
+    spec:
+      initContainers:
+      - name: wait-for-core
+        image: busybox
+        command: ['sh', '-c', 'until nc -z service-discovery 8761 && nc -z cloud-config 9296; do echo waiting for core services; sleep 2; done']
+      containers:
+      - name: payment-service
+        image: ecommerceacrios25dev.azurecr.io/payment-service:latest
+        ports:
+        - containerPort: 8400
+        env:
+        - name: SERVER_PORT
+          value: "8400"
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:mysql://mysql-dev-ecommerceacrios25.mysql.database.azure.com:3306/ecommerce_db?useSSL=true&requireSSL=false"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "adminuser"
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: db-password
+        - name: SPRING_JPA_DATABASE_PLATFORM
+          value: "org.hibernate.dialect.MySQL5InnoDBDialect"
+        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+          value: "update"
+        - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+          value: "true"
+        - name: EUREKA_INSTANCE_IP_ADDRESS
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:mysql://mysql-dev-ecommerceacrios25.mysql.database.azure.com:3306/ecommerce_db?useSSL=true&requireSSL=false"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "adminuser"
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: db-password 
+        - name: SPRING_JPA_DATABASE_PLATFORM
+          value: "org.hibernate.dialect.MySQL8Dialect"
+        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+          value: "update"
+        - name: SPRING_FLYWAY_ENABLED
+          value: "false"
+
+        - name: JAVA_TOOL_OPTIONS
+          value: "-Deureka.client.serviceUrl.defaultZone=http://service-discovery:8761/eureka/ -Dspring.cloud.config.uri=http://cloud-config:9296"
+        - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+          value: "health,info,prometheus,metrics"
+        - name: MANAGEMENT_METRICS_EXPORT_PROMETHEUS_ENABLED
+          value: "true"
+        livenessProbe:
+          httpGet:
+            path: /payment-service/actuator/health
+            port: 8400
+          initialDelaySeconds: 300
+          periodSeconds: 60
+          timeoutSeconds: 30
+          failureThreshold: 10
+        readinessProbe:
+          httpGet:
+            path: /payment-service/actuator/health
+            port: 8400
+          initialDelaySeconds: 180
+          periodSeconds: 60
+          timeoutSeconds: 30
+          failureThreshold: 10
+        resources:
+          requests:
+            cpu: "1m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-service
+spec:
+  selector:
+    app: payment-service
+  ports:
+  - port: 8400
+    targetPort: 8400
+  type: ClusterIP
+
+---
+# --- Shipping Service ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shipping-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: shipping-service
+  template:
+    metadata:
+      labels:
+        app: shipping-service
+    spec:
+      initContainers:
+      - name: wait-for-core
+        image: busybox
+        command: ['sh', '-c', 'until nc -z service-discovery 8761 && nc -z cloud-config 9296; do echo waiting for core services; sleep 2; done']
+      containers:
+      - name: shipping-service
+        image: ecommerceacrios25dev.azurecr.io/shipping-service:latest
+        ports:
+        - containerPort: 8600
+        env:
+        - name: SERVER_PORT
+          value: "8600"
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:mysql://mysql-dev-ecommerceacrios25.mysql.database.azure.com:3306/ecommerce_db?useSSL=true&requireSSL=false"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "adminuser"
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: db-password
+        - name: SPRING_JPA_DATABASE_PLATFORM
+          value: "org.hibernate.dialect.MySQL5InnoDBDialect"
+        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+          value: "update"
+        - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+          value: "true"
+        - name: EUREKA_INSTANCE_IP_ADDRESS
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:mysql://mysql-dev-ecommerceacrios25.mysql.database.azure.com:3306/ecommerce_db?useSSL=true&requireSSL=false"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "adminuser"
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: db-password 
+        - name: SPRING_JPA_DATABASE_PLATFORM
+          value: "org.hibernate.dialect.MySQL8Dialect"
+        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+          value: "update"
+        - name: SPRING_FLYWAY_ENABLED
+          value: "false"
+
+        - name: JAVA_TOOL_OPTIONS
+          value: "-Deureka.client.serviceUrl.defaultZone=http://service-discovery:8761/eureka/ -Dspring.cloud.config.uri=http://cloud-config:9296"
+        - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+          value: "health,info,prometheus,metrics"
+        - name: MANAGEMENT_METRICS_EXPORT_PROMETHEUS_ENABLED
+          value: "true"
+        livenessProbe:
+          httpGet:
+            path: /shipping-service/actuator/health
+            port: 8600
+          initialDelaySeconds: 300
+          periodSeconds: 60
+          timeoutSeconds: 30
+          failureThreshold: 10
+        readinessProbe:
+          httpGet:
+            path: /shipping-service/actuator/health
+            port: 8600
+          initialDelaySeconds: 180
+          periodSeconds: 60
+          timeoutSeconds: 30
+          failureThreshold: 10
+        resources:
+          requests:
+            cpu: "1m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: shipping-service
+spec:
+  selector:
+    app: shipping-service
+  ports:
+  - port: 8600
+    targetPort: 8600
+  type: ClusterIP
+
+---
+# --- Favourite Service ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: favourite-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: favourite-service
+  template:
+    metadata:
+      labels:
+        app: favourite-service
+    spec:
+      initContainers:
+      - name: wait-for-core
+        image: busybox
+        command: ['sh', '-c', 'until nc -z service-discovery 8761 && nc -z cloud-config 9296; do echo waiting for core services; sleep 2; done']
+      containers:
+      - name: favourite-service
+        image: ecommerceacrios25dev.azurecr.io/favourite-service:latest
+        ports:
+        - containerPort: 8800
+        env:
+        - name: SERVER_PORT
+          value: "8800"
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:mysql://mysql-dev-ecommerceacrios25.mysql.database.azure.com:3306/ecommerce_db?useSSL=true&requireSSL=false"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "adminuser"
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: db-password
+        - name: SPRING_JPA_DATABASE_PLATFORM
+          value: "org.hibernate.dialect.MySQL5InnoDBDialect"
+        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+          value: "update"
+        - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+          value: "true"
+        - name: EUREKA_INSTANCE_IP_ADDRESS
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:mysql://mysql-dev-ecommerceacrios25.mysql.database.azure.com:3306/ecommerce_db?useSSL=true&requireSSL=false"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "adminuser"
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: db-password 
+        - name: SPRING_JPA_DATABASE_PLATFORM
+          value: "org.hibernate.dialect.MySQL8Dialect"
+        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+          value: "update"
+        - name: SPRING_FLYWAY_ENABLED
+          value: "false"
+
+        - name: JAVA_TOOL_OPTIONS
+          value: "-Deureka.client.serviceUrl.defaultZone=http://service-discovery:8761/eureka/ -Dspring.cloud.config.uri=http://cloud-config:9296"
+        - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+          value: "health,info,prometheus,metrics"
+        - name: MANAGEMENT_METRICS_EXPORT_PROMETHEUS_ENABLED
+          value: "true"
+        livenessProbe:
+          httpGet:
+            path: /favourite-service/actuator/health
+            port: 8800
+          initialDelaySeconds: 300
+          periodSeconds: 60
+          timeoutSeconds: 30
+          failureThreshold: 10
+        readinessProbe:
+          httpGet:
+            path: /favourite-service/actuator/health
+            port: 8800
+          initialDelaySeconds: 180
+          periodSeconds: 60
+          timeoutSeconds: 30
+          failureThreshold: 10
+        resources:
+          requests:
+            cpu: "1m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: favourite-service
+spec:
+  selector:
+    app: favourite-service
+  ports:
+  - port: 8800
+    targetPort: 8800
+  type: ClusterIP
