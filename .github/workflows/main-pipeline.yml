@@ -12,7 +12,7 @@ env:
   RESOURCE_GROUP_BASE: "ecommerce-rg"
   AKS_CLUSTER_BASE: "ecommerce-aks"
 
-# --- CAMBIO 1: Permisos de escritura a nivel global ---
+# Permisos de escritura a nivel global
 permissions:
   contents: write
   pull-requests: write
@@ -45,10 +45,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.MY_PAT }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        # Ejecuta 'verify' para correr tests y luego el plugin de sonar
-        # Si ya pusiste las propiedades en el pom.xml, este comando las leerá automáticamente
         run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=isabelaocampos_Proyecto-Final-Ingeniera-de-Software-V
-      # -------------------------------------------
+      
       # 2. Compilación y Pruebas Unitarias
       - name: Build & Test
         run: mvn clean package -DskipTests
@@ -67,23 +65,19 @@ jobs:
         id: semver
         uses: anothrNick/github-tag-action@1.67.0
         env:
-          # --- CAMBIO 2: Usamos TU token personal (PAT) en lugar del default ---
           GITHUB_TOKEN: ${{ secrets.MY_PAT }} 
-          # --------------------------------------------------------------------
           WITH_V: true
           DEFAULT_BUMP: patch
-
-      # ... (después del paso 'Semantic Versioning')
 
       # 5. Generar Release Notes Automáticos 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
-        if: steps.semver.outputs.new_tag != '' # Solo si hay versión nueva
+        if: steps.semver.outputs.new_tag != ''
         with:
           tag_name: ${{ steps.semver.outputs.new_tag }}
           name: Release ${{ steps.semver.outputs.new_tag }}
           generate_release_notes: true 
-          token: ${{ secrets.MY_PAT }} # Usa tu token personal
+          token: ${{ secrets.MY_PAT }}
 
     outputs:
       new_version: ${{ steps.semver.outputs.new_tag }}
@@ -110,17 +104,12 @@ jobs:
           
           for service in $services; do
             echo "🚀 Procesando $service..."
-            
-            # Construir DENTRO de la carpeta para que Maven genere el target ahí
             cd $service
             mvn clean package -DskipTests
-            
             docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/$service:$version .
             docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/$service:latest .
-            
             docker push ${{ secrets.ACR_LOGIN_SERVER }}/$service:$version
             docker push ${{ secrets.ACR_LOGIN_SERVER }}/$service:latest
-            
             cd ..
           done
 
@@ -147,10 +136,43 @@ jobs:
 
       - name: Deploy to Kubernetes
         run: |
+          echo "💣 DESTRUYENDO deployment anterior para liberar RAM..."
+          kubectl delete deployment --all --ignore-not-found=true
+          kubectl delete service --all --ignore-not-found=true
+          
+          echo "⏳ Esperando a que el clúster se vacíe..."
+          for i in {1..30}; do
+            count=$(kubectl get pods --no-headers | wc -l)
+            if [ "$count" -eq "0" ]; then
+              echo "✅ Clúster vacío. Listo para desplegar."
+              break
+            fi
+            echo "Todavía hay $count pods vivos... esperando..."
+            sleep 5
+          done
+
+          echo "🚀 Desplegando nueva versión..."
           kubectl apply -f k8s/all-deployments.yaml
 
-          # Forzamos reinicio para que descargue la nueva imagen 'latest'
-          kubectl rollout restart deployment
+      # --- AUDITORÍA DE CALIDAD (TIMEOUT EXTENDIDO A 1200s) ---
+      - name: Verify Deployment Health
+        run: |
+          echo "🕵️‍♀️ Iniciando verificación de salud de los microservicios..."
+          deployments="zipkin service-discovery cloud-config api-gateway product-service user-service order-service payment-service shipping-service favourite-service"
+          
+          for deploy in $deployments; do
+            echo "⏳ Esperando a que $deploy esté estabilizado..."
+            
+            # --- CAMBIO AQUÍ: Subimos timeout a 1200s (10 minutos) ---
+            if ! kubectl rollout status deployment/$deploy --timeout=1200s; then
+              echo "❌ ERROR CRÍTICO: El servicio $deploy no logró arrancar."
+              echo "--- LOGS DE LA MUERTE ($deploy) ---"
+              kubectl logs -l app=$deploy --tail=50
+              echo "-----------------------------------"
+              exit 1 
+            fi
+          done
+          echo "✅ ¡ÉXITO! Todos los microservicios están Running y listos."
 
   # --- ETAPA 4: PROMOCIÓN A PROD (Manual) ---
   deploy-prod:
