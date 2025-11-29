@@ -1,4 +1,4 @@
-name: OPS - Start/Stop Environments
+name: OPS - Start/Stop Environments (FinOps)
 
 on:
   workflow_dispatch:
@@ -12,7 +12,7 @@ on:
         - dev
         - prod
       action:
-        description: 'Acción'
+        description: 'Acción (Ahorro de Costos)'
         required: true
         default: 'stop'
         type: choice
@@ -21,7 +21,7 @@ on:
         - stop
 
 jobs:
-  manage-cluster:
+  manage-infrastructure:
     runs-on: ubuntu-latest
     steps:
       - name: Azure Login
@@ -29,13 +29,30 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Execute Action
+      - name: Execute FinOps Action (AKS + MySQL)
         run: |
+          # 1. Definición de Nombres (Basado en tus comandos manuales)
+          # Se construyen dinámicamente según si eliges 'dev' o 'prod'
           RG_NAME="ecommerce-rg-${{ inputs.environment }}"
           AKS_NAME="ecommerce-aks-${{ inputs.environment }}"
+          DB_NAME="mysql-${{ inputs.environment }}-ecommerceacrios25"
           
-          echo "🚀 Ejecutando ${{ inputs.action }} en $AKS_NAME..."
-          
-          az aks ${{ inputs.action }} --name $AKS_NAME --resource-group $RG_NAME
-          
-          echo "✅ Acción completada."
+          ACTION="${{ inputs.action }}"
+
+          echo "🚀 Iniciando secuencia de $ACTION..."
+          echo "🎯 Objetivo: Ambiente ${{ inputs.environment }}"
+          echo "📦 Recursos afectados: $AKS_NAME y $DB_NAME"
+
+          # --- PASO 1: BASE DE DATOS (MySQL Flexible Server) ---
+          # Ejecuta: az mysql flexible-server stop/start ...
+          echo "Processing MySQL Server..."
+          az mysql flexible-server $ACTION --name $DB_NAME --resource-group $RG_NAME --no-wait
+          echo "✅ Orden enviada a MySQL (Modo asíncrono)."
+
+          # --- PASO 2: CLÚSTER KUBERNETES (AKS) ---
+          # Ejecuta: az aks stop/start ...
+          echo "Processing AKS Cluster..."
+          az aks $ACTION --name $AKS_NAME --resource-group $RG_NAME --no-wait
+          echo "✅ Orden enviada a AKS (Modo asíncrono)."
+
+          echo "🏁 Operación FinOps completada con éxito."
