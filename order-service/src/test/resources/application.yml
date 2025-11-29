@@ -1,0 +1,112 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# CONFIGURACIÓN DE TESTS PARA ORDER-SERVICE
+# ═══════════════════════════════════════════════════════════════════════════
+# Autor: Arquitecto de Software
+# Fecha: 26 de noviembre de 2025
+# Propósito: Aislar entorno de pruebas - Desactivar Flyway y usar H2 con Hibernate
+# ═══════════════════════════════════════════════════════════════════════════
+
+spring:
+  # ────────────────────────────────────────────────────────────────────────
+  # DATASOURCE - Base de datos H2 en memoria para tests
+  # ────────────────────────────────────────────────────────────────────────
+  datasource:
+    url: jdbc:h2:mem:orderdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=MySQL;INIT=SET REFERENTIAL_INTEGRITY FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+    hikari:
+      maximum-pool-size: 2  # Reducir pool para tests (ahorro de RAM)
+
+  # ────────────────────────────────────────────────────────────────────────
+  # JPA/HIBERNATE - Crear esquema automáticamente (sin Flyway)
+  # ────────────────────────────────────────────────────────────────────────
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop  # ✅ Hibernate crea tablas al iniciar, las elimina al terminar
+    show-sql: false  # Cambiar a true para debug SQL
+    defer-datasource-initialization: true  # ✅ Permitir data.sql después de DDL
+    properties:
+      hibernate:
+        format_sql: false
+        use_sql_comments: false
+        jdbc:
+          batch_size: 10
+
+  # ────────────────────────────────────────────────────────────────────────
+  # FLYWAY - DESACTIVADO (CRÍTICO para evitar errores de sintaxis MySQL)
+  # ────────────────────────────────────────────────────────────────────────
+  flyway:
+    enabled: false  # ✅ CRÍTICO: No ejecutar migraciones SQL en tests
+
+  # ────────────────────────────────────────────────────────────────────────
+  # SPRING CLOUD CONFIG - DESACTIVADO (no conectar a Config Server)
+  # ────────────────────────────────────────────────────────────────────────
+  cloud:
+    config:
+      enabled: false  # ✅ CRÍTICO: No intentar cargar configuración desde Config Server
+      import-check:
+        enabled: false  # ✅ Desactiva el chequeo de spring.config.import
+    discovery:
+      enabled: false  # No usar Service Discovery en tests
+
+  # ────────────────────────────────────────────────────────────────────────
+  # H2 CONSOLE - Desactivada en tests (no necesaria)
+  # ────────────────────────────────────────────────────────────────────────
+  h2:
+    console:
+      enabled: false
+
+  # ────────────────────────────────────────────────────────────────────────
+  # ZIPKIN - Desactivado (no conectar a servidor de trazas en tests)
+  # ────────────────────────────────────────────────────────────────────────
+  zipkin:
+    enabled: false
+    base-url: http://localhost:9411  # URL dummy (no se usa)
+
+  sleuth:
+    sampler:
+      probability: 0.0  # No capturar trazas en tests
+
+# ════════════════════════════════════════════════════════════════════════════
+# EUREKA CLIENT - Desactivado (no registrarse en Service Discovery)
+# ════════════════════════════════════════════════════════════════════════════
+eureka:
+  client:
+    enabled: false  # ✅ No intentar conectarse a Eureka en tests
+    register-with-eureka: false
+    fetch-registry: false
+  instance:
+    hostname: localhost
+
+# ════════════════════════════════════════════════════════════════════════════
+# LOGGING - Configuración para tests (reducir ruido en consola)
+# ════════════════════════════════════════════════════════════════════════════
+logging:
+  level:
+    root: WARN
+    com.selimhorri.app: INFO
+    org.springframework.web: WARN
+    org.springframework.boot: WARN
+    org.hibernate: WARN
+    org.flywaydb: OFF  # Silenciar Flyway completamente
+
+# ════════════════════════════════════════════════════════════════════════════
+# SERVER - Puerto aleatorio para evitar conflictos en tests paralelos
+# ════════════════════════════════════════════════════════════════════════════
+server:
+  port: 0  # Puerto aleatorio (@LocalServerPort en tests)
+  error:
+    include-message: always
+    include-binding-errors: always
+
+# ════════════════════════════════════════════════════════════════════════════
+# MANAGEMENT - Desactivar endpoints Actuator innecesarios en tests
+# ════════════════════════════════════════════════════════════════════════════
+management:
+  endpoints:
+    enabled-by-default: false
+  health:
+    defaults:
+      enabled: false

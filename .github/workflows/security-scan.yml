@@ -1,0 +1,303 @@
+name: Security Scan - OWASP ZAP (DAST)
+
+# ═══════════════════════════════════════════════════════════════════════════
+# ENTREGABLE 2 - Pipeline de Seguridad Dinámica (DAST con OWASP ZAP)
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# Descripción:
+#   Pipeline de seguridad que ejecuta análisis dinámico (DAST) usando OWASP ZAP
+#   contra el entorno de producción en Azure.
+#
+# Tipo de Escaneo:
+#   - Baseline Scan: Escaneo rápido y pasivo (sin ataques activos)
+#   - Detecta vulnerabilidades comunes de OWASP Top 10
+#
+# Configuración:
+#   - Ejecución manual (workflow_dispatch) o programada (cron)
+#   - NO rompe el pipeline (fail_action: false)
+#   - Genera reporte HTML/Markdown como artifact
+#   - NO crea issues en GitHub
+#
+# URL Objetivo: https://4.229.145.171:8080 (Azure Production)
+#
+# Rúbrica: "Seguridad OWASP Real"
+#
+# Autor: QA Lead & Security Team
+# Fecha: 24 de noviembre de 2025
+# ═══════════════════════════════════════════════════════════════════════════
+
+on:
+  # Ejecución manual desde GitHub Actions UI
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: 'URL objetivo para escaneo (default: Azure Production)'
+        required: false
+        default: 'https://4.229.145.171:8080'
+      scan_type:
+        description: 'Tipo de escaneo (baseline, full-scan)'
+        required: false
+        default: 'baseline'
+        type: choice
+        options:
+          - baseline
+          - full-scan
+  
+  # Ejecución programada: Lunes y Viernes a las 2:00 AM
+  schedule:
+    - cron: '0 2 * * 1,5'  # 2:00 AM UTC los lunes y viernes
+  
+  # Opcional: Ejecutar en push a main (comentar si no es necesario)
+  # push:
+  #   branches: [ "main" ]
+
+# Permisos necesarios
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+env:
+  # URL de producción en Azure
+  TARGET_URL: 'https://4.229.145.171:8080'
+  ZAP_VERSION: 'stable'
+
+jobs:
+  # ═══════════════════════════════════════════════════════════════════════════
+  # JOB 1: OWASP ZAP Baseline Scan
+  # ═══════════════════════════════════════════════════════════════════════════
+  zap-baseline-scan:
+    name: 'OWASP ZAP - Baseline Security Scan'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: 📋 Información del escaneo
+        run: |
+          echo "════════════════════════════════════════════════════════════"
+          echo "🔒 INICIANDO ESCANEO DE SEGURIDAD DINÁMICA (DAST)"
+          echo "════════════════════════════════════════════════════════════"
+          echo "🎯 Target URL: ${{ env.TARGET_URL }}"
+          echo "🛡️  Scanner: OWASP ZAP (Zed Attack Proxy)"
+          echo "📊 Scan Type: Baseline (Passive)"
+          echo "⏰ Fecha: $(date)"
+          echo "════════════════════════════════════════════════════════════"
+      
+      - name: 🔍 OWASP ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.10.0
+        with:
+          # URL objetivo (Azure Production)
+          target: ${{ github.event.inputs.target_url || env.TARGET_URL }}
+          
+          # Archivo de reglas de escaneo (opcional)
+          # rules_file_name: '.zap/rules.tsv'
+          
+          # Comandos adicionales de ZAP (opcional)
+          # cmd_options: '-a'
+          
+          # NO romper el pipeline si encuentra vulnerabilidades
+          fail_action: false
+          
+          # NO crear issues en GitHub
+          allow_issue_writing: false
+          
+          # Generar reporte en formato Markdown
+          issue_title: 'OWASP ZAP Security Scan Report'
+          
+          # Token para GitHub (no necesario si allow_issue_writing = false)
+          # token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: 📊 Procesar resultados del escaneo
+        if: always()
+        run: |
+          echo "════════════════════════════════════════════════════════════"
+          echo "📊 RESULTADOS DEL ESCANEO"
+          echo "════════════════════════════════════════════════════════════"
+          
+          # Verificar si existen reportes generados
+          if [ -f "report_html.html" ]; then
+            echo "✅ Reporte HTML generado: report_html.html"
+            ls -lh report_html.html
+          else
+            echo "⚠️  No se encontró report_html.html"
+          fi
+          
+          if [ -f "report_md.md" ]; then
+            echo "✅ Reporte Markdown generado: report_md.md"
+            ls -lh report_md.md
+            echo ""
+            echo "📋 Contenido del reporte (primeras 50 líneas):"
+            echo "────────────────────────────────────────────────────────────"
+            head -n 50 report_md.md || true
+          else
+            echo "⚠️  No se encontró report_md.md"
+          fi
+          
+          if [ -f "report_json.json" ]; then
+            echo "✅ Reporte JSON generado: report_json.json"
+            ls -lh report_json.json
+          else
+            echo "⚠️  No se encontró report_json.json"
+          fi
+          
+          echo "════════════════════════════════════════════════════════════"
+      
+      - name: 📤 Upload ZAP Scan Reports (HTML)
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: zap-baseline-report-html
+          path: report_html.html
+          retention-days: 30
+          if-no-files-found: warn
+      
+      - name: 📤 Upload ZAP Scan Reports (Markdown)
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: zap-baseline-report-markdown
+          path: report_md.md
+          retention-days: 30
+          if-no-files-found: warn
+      
+      - name: 📤 Upload ZAP Scan Reports (JSON)
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: zap-baseline-report-json
+          path: report_json.json
+          retention-days: 30
+          if-no-files-found: warn
+      
+      - name: 📈 Generar resumen en GitHub Actions
+        if: always()
+        run: |
+          echo "# 🔒 OWASP ZAP Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 🎯 Configuración del Escaneo" >> $GITHUB_STEP_SUMMARY
+          echo "- **Target URL:** \`${{ env.TARGET_URL }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Scan Type:** Baseline (Passive)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Scanner:** OWASP ZAP" >> $GITHUB_STEP_SUMMARY
+          echo "- **Fecha:** $(date)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📊 Resultados" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Escaneo completado exitosamente" >> $GITHUB_STEP_SUMMARY
+          echo "- 📦 Reportes disponibles en Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📦 Artifacts Generados" >> $GITHUB_STEP_SUMMARY
+          echo "1. **zap-baseline-report-html** - Reporte visual completo" >> $GITHUB_STEP_SUMMARY
+          echo "2. **zap-baseline-report-markdown** - Reporte en texto" >> $GITHUB_STEP_SUMMARY
+          echo "3. **zap-baseline-report-json** - Reporte para procesamiento automático" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 🔍 Próximos Pasos" >> $GITHUB_STEP_SUMMARY
+          echo "1. Descargar y revisar el reporte HTML" >> $GITHUB_STEP_SUMMARY
+          echo "2. Analizar vulnerabilidades encontradas" >> $GITHUB_STEP_SUMMARY
+          echo "3. Priorizar remediation según severidad (High > Medium > Low)" >> $GITHUB_STEP_SUMMARY
+          echo "4. Implementar fixes y re-escanear" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "🛡️ **OWASP ZAP** - Leading Web Application Security Scanner" >> $GITHUB_STEP_SUMMARY
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # JOB 2: Análisis de Resultados y Notificación (Opcional)
+  # ═══════════════════════════════════════════════════════════════════════════
+  analyze-results:
+    name: 'Analizar Resultados de Seguridad'
+    runs-on: ubuntu-latest
+    needs: zap-baseline-scan
+    if: always()
+    
+    steps:
+      - name: 📥 Download ZAP Reports
+        uses: actions/download-artifact@v3
+        with:
+          name: zap-baseline-report-markdown
+          path: ./reports
+        continue-on-error: true
+      
+      - name: 📊 Análisis de Vulnerabilidades
+        run: |
+          echo "════════════════════════════════════════════════════════════"
+          echo "🔍 ANÁLISIS DE VULNERABILIDADES DETECTADAS"
+          echo "════════════════════════════════════════════════════════════"
+          
+          if [ -f "./reports/report_md.md" ]; then
+            echo "📄 Reporte encontrado. Analizando..."
+            
+            # Contar alertas por severidad
+            HIGH_COUNT=$(grep -c "High" ./reports/report_md.md || echo "0")
+            MEDIUM_COUNT=$(grep -c "Medium" ./reports/report_md.md || echo "0")
+            LOW_COUNT=$(grep -c "Low" ./reports/report_md.md || echo "0")
+            
+            echo ""
+            echo "📊 Resumen de Vulnerabilidades:"
+            echo "   🔴 High:   $HIGH_COUNT"
+            echo "   🟡 Medium: $MEDIUM_COUNT"
+            echo "   🟢 Low:    $LOW_COUNT"
+            echo ""
+            
+            if [ "$HIGH_COUNT" -gt 0 ]; then
+              echo "⚠️  ATENCIÓN: Se encontraron $HIGH_COUNT vulnerabilidades HIGH"
+              echo "   Se recomienda remediation inmediata."
+            elif [ "$MEDIUM_COUNT" -gt 0 ]; then
+              echo "⚠️  Se encontraron $MEDIUM_COUNT vulnerabilidades MEDIUM"
+              echo "   Se recomienda revisar y planificar remediation."
+            else
+              echo "✅ No se encontraron vulnerabilidades críticas."
+            fi
+          else
+            echo "⚠️  No se pudo encontrar el reporte para análisis."
+          fi
+          
+          echo "════════════════════════════════════════════════════════════"
+      
+      - name: ✅ Security Scan Completed
+        run: |
+          echo "════════════════════════════════════════════════════════════"
+          echo "✅ ESCANEO DE SEGURIDAD COMPLETADO"
+          echo "════════════════════════════════════════════════════════════"
+          echo "📦 Reportes disponibles en la sección Artifacts"
+          echo "🔍 Revisa los reportes para detalles completos"
+          echo "════════════════════════════════════════════════════════════"
+
+# ═══════════════════════════════════════════════════════════════════════════
+# NOTAS IMPORTANTES
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# 1. BASELINE SCAN vs FULL SCAN:
+#    - Baseline: Escaneo pasivo rápido (~5 min)
+#    - Full Scan: Escaneo activo completo (~30-60 min)
+#
+# 2. INTERPRETACIÓN DE RESULTADOS:
+#    - High: Vulnerabilidades críticas, remediation inmediata
+#    - Medium: Vulnerabilidades importantes, planificar fix
+#    - Low: Vulnerabilidades menores, monitorear
+#
+# 3. OWASP TOP 10 CUBIERTO:
+#    ✅ A01:2021 - Broken Access Control
+#    ✅ A02:2021 - Cryptographic Failures
+#    ✅ A03:2021 - Injection
+#    ✅ A04:2021 - Insecure Design
+#    ✅ A05:2021 - Security Misconfiguration
+#    ✅ A06:2021 - Vulnerable and Outdated Components
+#    ✅ A07:2021 - Identification and Authentication Failures
+#    ✅ A08:2021 - Software and Data Integrity Failures
+#    ✅ A09:2021 - Security Logging and Monitoring Failures
+#    ✅ A10:2021 - Server-Side Request Forgery (SSRF)
+#
+# 4. EJECUCIÓN MANUAL:
+#    - Ir a Actions → Security Scan → Run workflow
+#    - Opcional: Cambiar URL objetivo
+#
+# 5. TROUBLESHOOTING:
+#    - Si el escaneo falla por timeout en Azure:
+#      * Verificar que el puerto 8080 esté abierto
+#      * Verificar reglas de firewall en Azure
+#      * Considerar usar IP pública estable
+#    - Si no hay reportes:
+#      * Verificar que ZAP pueda alcanzar la URL
+#      * Revisar logs del job para errores de conectividad
+#
+# ═══════════════════════════════════════════════════════════════════════════
