@@ -46,3 +46,8 @@ build/
 
 # Logs de errores
 crash.log
+
+*.key
+*.crt
+*.pem
+*.p12
