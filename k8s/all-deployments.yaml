@@ -247,7 +247,10 @@ spec:
         - name: SPRING_DATASOURCE_USERNAME
           value: "adminuser"
         - name: SPRING_DATASOURCE_PASSWORD
-          value: "SecurePassword123!" 
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: db-password 
         - name: SPRING_JPA_DATABASE_PLATFORM
           value: "org.hibernate.dialect.MySQL8Dialect"
         
@@ -337,7 +340,10 @@ spec:
         - name: SPRING_DATASOURCE_USERNAME
           value: "adminuser"
         - name: SPRING_DATASOURCE_PASSWORD
-          value: "SecurePassword123!"
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: db-password
         - name: SPRING_JPA_DATABASE_PLATFORM
           value: "org.hibernate.dialect.MySQL5InnoDBDialect"
         - name: SPRING_JPA_HIBERNATE_DDL_AUTO
@@ -354,7 +360,10 @@ spec:
         - name: SPRING_DATASOURCE_USERNAME
           value: "adminuser"
         - name: SPRING_DATASOURCE_PASSWORD
-          value: "SecurePassword123!" 
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: db-password 
         - name: SPRING_JPA_DATABASE_PLATFORM
           value: "org.hibernate.dialect.MySQL8Dialect"
         - name: SPRING_JPA_HIBERNATE_DDL_AUTO
@@ -437,7 +446,10 @@ spec:
         - name: SPRING_DATASOURCE_USERNAME
           value: "adminuser"
         - name: SPRING_DATASOURCE_PASSWORD
-          value: "SecurePassword123!"
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: db-password
         - name: SPRING_JPA_DATABASE_PLATFORM
           value: "org.hibernate.dialect.MySQL5InnoDBDialect"
         - name: SPRING_JPA_HIBERNATE_DDL_AUTO
@@ -454,7 +466,10 @@ spec:
         - name: SPRING_DATASOURCE_USERNAME
           value: "adminuser"
         - name: SPRING_DATASOURCE_PASSWORD
-          value: "SecurePassword123!" 
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: db-password 
         - name: SPRING_JPA_DATABASE_PLATFORM
           value: "org.hibernate.dialect.MySQL8Dialect"
         - name: SPRING_JPA_HIBERNATE_DDL_AUTO
@@ -537,7 +552,10 @@ spec:
         - name: SPRING_DATASOURCE_USERNAME
           value: "adminuser"
         - name: SPRING_DATASOURCE_PASSWORD
-          value: "SecurePassword123!"
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: db-password
         - name: SPRING_JPA_DATABASE_PLATFORM
           value: "org.hibernate.dialect.MySQL5InnoDBDialect"
         - name: SPRING_JPA_HIBERNATE_DDL_AUTO
@@ -554,7 +572,10 @@ spec:
         - name: SPRING_DATASOURCE_USERNAME
           value: "adminuser"
         - name: SPRING_DATASOURCE_PASSWORD
-          value: "SecurePassword123!" 
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: db-password 
         - name: SPRING_JPA_DATABASE_PLATFORM
           value: "org.hibernate.dialect.MySQL8Dialect"
         - name: SPRING_JPA_HIBERNATE_DDL_AUTO
@@ -637,7 +658,10 @@ spec:
         - name: SPRING_DATASOURCE_USERNAME
           value: "adminuser"
         - name: SPRING_DATASOURCE_PASSWORD
-          value: "SecurePassword123!"
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: db-password
         - name: SPRING_JPA_DATABASE_PLATFORM
           value: "org.hibernate.dialect.MySQL5InnoDBDialect"
         - name: SPRING_JPA_HIBERNATE_DDL_AUTO
@@ -654,7 +678,10 @@ spec:
         - name: SPRING_DATASOURCE_USERNAME
           value: "adminuser"
         - name: SPRING_DATASOURCE_PASSWORD
-          value: "SecurePassword123!" 
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: db-password 
         - name: SPRING_JPA_DATABASE_PLATFORM
           value: "org.hibernate.dialect.MySQL8Dialect"
         - name: SPRING_JPA_HIBERNATE_DDL_AUTO
@@ -737,7 +764,10 @@ spec:
         - name: SPRING_DATASOURCE_USERNAME
           value: "adminuser"
         - name: SPRING_DATASOURCE_PASSWORD
-          value: "SecurePassword123!"
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: db-password
         - name: SPRING_JPA_DATABASE_PLATFORM
           value: "org.hibernate.dialect.MySQL5InnoDBDialect"
         - name: SPRING_JPA_HIBERNATE_DDL_AUTO
@@ -754,7 +784,10 @@ spec:
         - name: SPRING_DATASOURCE_USERNAME
           value: "adminuser"
         - name: SPRING_DATASOURCE_PASSWORD
-          value: "SecurePassword123!" 
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: db-password 
         - name: SPRING_JPA_DATABASE_PLATFORM
           value: "org.hibernate.dialect.MySQL8Dialect"
         - name: SPRING_JPA_HIBERNATE_DDL_AUTO
