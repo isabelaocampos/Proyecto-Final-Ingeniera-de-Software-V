@@ -69,12 +69,19 @@ jobs:
         continue-on-error: true
       
       - name: 📊 Generate Coverage Report (JaCoCo)
-        env:
-          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         run: |
           echo "📊 Generando reporte de cobertura JaCoCo..."
           mvn -B clean verify
         continue-on-error: true
+      
+      - name: 🛡️ Security Scan (Trivy)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          ignore-unfixed: true
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'
       
       - name: 📈 Upload JaCoCo Report as Artifact
         uses: actions/upload-artifact@v4
