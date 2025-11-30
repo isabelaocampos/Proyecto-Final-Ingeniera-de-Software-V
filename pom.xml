@@ -219,22 +219,32 @@
 			<plugin>
 				<groupId>org.owasp</groupId>
 				<artifactId>dependency-check-maven</artifactId>
-				<version>8.4.0</version>
+				<version>10.0.3</version>
 				<configuration>
-					<!-- Generar reporte HTML -->
+					<!-- Generar reportes HTML y JSON -->
 					<format>HTML</format>
 					<format>JSON</format>
 					
 					<!-- NO romper el build por CVEs (valor >10 deshabilita fail) -->
 					<failBuildOnCVSS>11</failBuildOnCVSS>
 					
+					<!-- NO fallar si hay errores de conexión con NVD (crítico para pipelines) -->
+					<failOnError>false</failOnError>
+					
+					<!-- Delay entre llamadas a la API de NVD (evitar rate limit 403) -->
+					<nvdApiDelay>10000</nvdApiDelay>
+					
 					<!-- Configuración de análisis -->
 					<suppressionFiles>
 						<suppressionFile>owasp-suppressions.xml</suppressionFile>
 					</suppressionFiles>
 					
-					<!-- Optimización: Skip de análisis de assemblies .NET -->
+					<!-- Optimizaciones de rendimiento -->
 					<assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
+					<nodeAnalyzerEnabled>false</nodeAnalyzerEnabled>
+					
+					<!-- Habilitar cache local de base de datos NVD -->
+					<cveValidForHours>24</cveValidForHours>
 					
 					<!-- Output directory para reportes -->
 					<outputDirectory>${project.build.directory}/dependency-check-report</outputDirectory>
