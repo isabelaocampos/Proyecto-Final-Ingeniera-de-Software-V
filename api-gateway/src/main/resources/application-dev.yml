@@ -15,14 +15,14 @@ logging:
   level:
     org:
       hibernate:
-        SQL: DEBUG
+        SQL: INFO
       springframework:
-        web: DEBUG
-        data: DEBUG
+        web: INFO
+        data: INFO
       boot:
         autoconfigure:
           data:
-            rest: DEBUG
-            jpa: DEBUG
-            orm: DEBUG
+            rest: INFO
+            jpa: INFO
+            orm: INFO
 

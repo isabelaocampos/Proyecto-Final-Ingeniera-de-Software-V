@@ -1,12 +1,21 @@
+# Usamos una imagen JRE Alpine ligera (Java 11)
+FROM eclipse-temurin:11-jre-alpine
 
-FROM openjdk:11
+# Argumento para la versión, por defecto la del proyecto
 ARG PROJECT_VERSION=0.1.0
-RUN mkdir -p /home/app
+
+# Crear usuario linux standard para seguridad (Best Practice)
+RUN addgroup -S spring && adduser -S spring -G spring
+USER spring:spring
+
 WORKDIR /home/app
-ENV SPRING_PROFILES_ACTIVE dev
-COPY service-discovery/ .
-ADD service-discovery/target/service-discovery-v${PROJECT_VERSION}.jar service-discovery.jar
-EXPOSE 8761
-ENTRYPOINT ["java", "-Dspring.profiles.active=${SPRING_PROFILES_ACTIVE}", "-jar", "service-discovery.jar"]
 
+# Copiamos el jar compilado.
+# OJO: Esto asume que el nombre del jar es estándar. 
+# Si falla, verifica el nombre en la carpeta target/ de cada servicio.
+COPY target/*.jar app.jar
 
+# Límites de memoria duros para que no se coma la RAM de tu compañera
+ENV JAVA_OPTS="-Xmx256m -Xms256m -XX:+UseSerialGC"
+
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Dspring.profiles.active=${SPRING_PROFILES_ACTIVE} -jar app.jar"]
