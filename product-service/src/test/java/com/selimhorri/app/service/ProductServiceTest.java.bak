@@ -1,0 +1,226 @@
+package com.selimhorri.app.service;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import com.selimhorri.app.domain.Category;
+import com.selimhorri.app.domain.Product;
+import com.selimhorri.app.dto.ProductDto;
+import com.selimhorri.app.helper.ProductMappingHelper;
+import com.selimhorri.app.repository.ProductRepository;
+import com.selimhorri.app.service.impl.ProductServiceImpl;
+
+/**
+ * ENTREGABLE 2 - Prueba Unitaria (Unit Test)
+ * Lightweight test usando Mockito sin cargar contexto de Spring
+ * Para máquinas con RAM limitada (8GB)
+ */
+@ExtendWith(MockitoExtension.class)
+@DisplayName("Product Service - Unit Tests (Lightweight)")
+class ProductServiceTest {
+
+    @Mock
+    private ProductRepository productRepository;
+    
+    @Mock
+    private ProductMappingHelper productMappingHelper;
+    
+    @InjectMocks
+    private ProductServiceImpl productService;
+    
+    private Product product1;
+    private Product product2;
+    private ProductDto productDto1;
+    private ProductDto productDto2;
+    private Category category;
+
+    @BeforeEach
+    void setUp() {
+        // Datos de prueba
+        category = Category.builder()
+            .categoryId(1)
+            .categoryTitle("Electronics")
+            .build();
+            
+        product1 = Product.builder()
+            .productId(1)
+            .productTitle("Laptop Dell XPS")
+            .imageUrl("laptop.jpg")
+            .sku("LAP-001")
+            .priceUnit(1200.00)
+            .quantity(10)
+            .category(category)
+            .build();
+            
+        product2 = Product.builder()
+            .productId(2)
+            .productTitle("Mouse Logitech")
+            .imageUrl("mouse.jpg")
+            .sku("MOU-002")
+            .priceUnit(25.00)
+            .quantity(50)
+            .category(category)
+            .build();
+            
+        productDto1 = ProductDto.builder()
+            .productId(1)
+            .productTitle("Laptop Dell XPS")
+            .imageUrl("laptop.jpg")
+            .sku("LAP-001")
+            .priceUnit(1200.00)
+            .quantity(10)
+            .categoryId(1)
+            .build();
+            
+        productDto2 = ProductDto.builder()
+            .productId(2)
+            .productTitle("Mouse Logitech")
+            .imageUrl("mouse.jpg")
+            .sku("MOU-002")
+            .priceUnit(25.00)
+            .quantity(50)
+            .categoryId(1)
+            .build();
+    }
+
+    @Test
+    @DisplayName("findAll() - Debe retornar lista de productos correctamente")
+    void testFindAll_ShouldReturnProductList() {
+        // Given - Preparar datos mock
+        List<Product> products = Arrays.asList(product1, product2);
+        when(productRepository.findAll()).thenReturn(products);
+        when(productMappingHelper.map(product1)).thenReturn(productDto1);
+        when(productMappingHelper.map(product2)).thenReturn(productDto2);
+        
+        // When - Ejecutar método
+        List<ProductDto> result = productService.findAll();
+        
+        // Then - Verificar resultados
+        assertNotNull(result, "La lista no debe ser null");
+        assertEquals(2, result.size(), "Debe retornar 2 productos");
+        assertEquals("Laptop Dell XPS", result.get(0).getProductTitle());
+        assertEquals("Mouse Logitech", result.get(1).getProductTitle());
+        
+        // Verify - Verificar interacciones con mocks
+        verify(productRepository, times(1)).findAll();
+        verify(productMappingHelper, times(2)).map(any(Product.class));
+    }
+
+    @Test
+    @DisplayName("findAll() - Debe retornar lista vacía cuando no hay productos")
+    void testFindAll_WhenNoProducts_ShouldReturnEmptyList() {
+        // Given
+        when(productRepository.findAll()).thenReturn(Arrays.asList());
+        
+        // When
+        List<ProductDto> result = productService.findAll();
+        
+        // Then
+        assertNotNull(result);
+        assertTrue(result.isEmpty(), "La lista debe estar vacía");
+        verify(productRepository, times(1)).findAll();
+        verify(productMappingHelper, never()).map(any(Product.class));
+    }
+
+    @Test
+    @DisplayName("findById() - Debe retornar producto cuando existe")
+    void testFindById_WhenProductExists_ShouldReturnProduct() {
+        // Given
+        Integer productId = 1;
+        when(productRepository.findById(productId)).thenReturn(Optional.of(product1));
+        when(productMappingHelper.map(product1)).thenReturn(productDto1);
+        
+        // When
+        ProductDto result = productService.findById(productId);
+        
+        // Then
+        assertNotNull(result);
+        assertEquals(1, result.getProductId());
+        assertEquals("Laptop Dell XPS", result.getProductTitle());
+        assertEquals(1200.00, result.getPriceUnit());
+        
+        verify(productRepository, times(1)).findById(productId);
+        verify(productMappingHelper, times(1)).map(product1);
+    }
+
+    @Test
+    @DisplayName("save() - Debe guardar producto correctamente")
+    void testSave_ShouldPersistProduct() {
+        // Given
+        Product productToSave = Product.builder()
+            .productTitle("New Product")
+            .sku("NEW-001")
+            .priceUnit(100.0)
+            .quantity(5)
+            .category(category)
+            .build();
+            
+        Product savedProduct = Product.builder()
+            .productId(3)
+            .productTitle("New Product")
+            .sku("NEW-001")
+            .priceUnit(100.0)
+            .quantity(5)
+            .category(category)
+            .build();
+            
+        ProductDto newProductDto = ProductDto.builder()
+            .productTitle("New Product")
+            .sku("NEW-001")
+            .priceUnit(100.0)
+            .quantity(5)
+            .categoryId(1)
+            .build();
+            
+        ProductDto savedProductDto = ProductDto.builder()
+            .productId(3)
+            .productTitle("New Product")
+            .sku("NEW-001")
+            .priceUnit(100.0)
+            .quantity(5)
+            .categoryId(1)
+            .build();
+            
+        when(productMappingHelper.map(newProductDto)).thenReturn(productToSave);
+        when(productRepository.save(productToSave)).thenReturn(savedProduct);
+        when(productMappingHelper.map(savedProduct)).thenReturn(savedProductDto);
+        
+        // When
+        ProductDto result = productService.save(newProductDto);
+        
+        // Then
+        assertNotNull(result);
+        assertEquals(3, result.getProductId());
+        assertEquals("New Product", result.getProductTitle());
+        
+        verify(productRepository, times(1)).save(any(Product.class));
+    }
+
+    @Test
+    @DisplayName("deleteById() - Debe eliminar producto por ID")
+    void testDeleteById_ShouldRemoveProduct() {
+        // Given
+        Integer productId = 1;
+        when(productRepository.findById(productId)).thenReturn(Optional.of(product1));
+        doNothing().when(productRepository).deleteById(productId);
+        
+        // When
+        productService.deleteById(productId);
+        
+        // Then
+        verify(productRepository, times(1)).findById(productId);
+        verify(productRepository, times(1)).deleteById(productId);
+    }
+}
