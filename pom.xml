@@ -214,6 +214,39 @@
 					</excludes>
 				</configuration>
 			</plugin>
+			
+			<!-- OWASP Dependency Check - Análisis de vulnerabilidades CVE -->
+			<plugin>
+				<groupId>org.owasp</groupId>
+				<artifactId>dependency-check-maven</artifactId>
+				<version>8.4.0</version>
+				<configuration>
+					<!-- Generar reporte HTML -->
+					<format>HTML</format>
+					<format>JSON</format>
+					
+					<!-- NO romper el build por CVEs (valor >10 deshabilita fail) -->
+					<failBuildOnCVSS>11</failBuildOnCVSS>
+					
+					<!-- Configuración de análisis -->
+					<suppressionFiles>
+						<suppressionFile>owasp-suppressions.xml</suppressionFile>
+					</suppressionFiles>
+					
+					<!-- Optimización: Skip de análisis de assemblies .NET -->
+					<assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
+					
+					<!-- Output directory para reportes -->
+					<outputDirectory>${project.build.directory}/dependency-check-report</outputDirectory>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>check</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
 		<finalName>${project.artifactId}-v${project.version}</finalName>
 	</build>

@@ -306,7 +306,11 @@ zap-report.html
 ✅ **Pragmatismo:** Aceptar limitaciones de infraestructura (FK constraints en H2) y validar lo esencial  
 ✅ **Automatización:** Quality Gates en CI/CD previenen regresiones  
  
+### 6.2 Gestión de Vulnerabilidades (Risk Acceptance)
+Durante el análisis de seguridad (SCA), se detectaron vulnerabilidades en las dependencias tránsito de Spring Boot 2.7 (`CVE-2016-1000027`, `CVE-2024-38820`).
 
+**Decisión Técnica:**
+Se ha procedido a **documentar y aceptar el riesgo** temporalmente, configurando el pipeline en modo "Audit" (no bloqueante). La mitigación definitiva requiere la migración a Spring Boot 3.x, la cual está planificada para el siguiente ciclo de desarrollo fuera del alcance de esta entrega académica.
 
 **Elaborado por:** Equipo de QA y DevOps  
 **Fecha:** 27 de Noviembre de 2025  
