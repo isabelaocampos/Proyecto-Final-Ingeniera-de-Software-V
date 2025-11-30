@@ -151,6 +151,9 @@ jobs:
             sleep 5
           done
 
+          echo "💤 Esperando 30s para asegurar limpieza de Servicios..."
+          sleep 30
+
           echo "🚀 Desplegando nueva versión..."
           kubectl apply -f k8s/all-deployments.yaml
 
@@ -216,6 +219,9 @@ jobs:
             echo "Todavía hay pods terminando... ($count restantes)"
             sleep 5
           done
+
+          echo "💤 Esperando 30s para asegurar limpieza de Servicios..."
+          sleep 30
 
       # DESPLIEGUE: Instalamos la versión "Gold"
       - name: Deploy to Production
