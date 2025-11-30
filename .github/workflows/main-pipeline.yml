@@ -32,6 +32,14 @@ jobs:
           java-version: '11'
           distribution: 'temurin'
           cache: 'maven'
+      
+      - name: 🛡️ Cache OWASP Dependency Check Database
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository/org/owasp/dependency-check-data
+          key: ${{ runner.os }}-dependency-check-data-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-dependency-check-data
 
       # --- ANÁLISIS CON SONARCLOUD ---
       - name: Cache SonarCloud packages
