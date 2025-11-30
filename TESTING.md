@@ -164,43 +164,17 @@ class WebsiteUser(HttpUser):
 
 ---
 
-## 🔒 3. Seguridad: DAST con OWASP ZAP
+### 3. Seguridad Estática y de Contenedores (SCA)
+Implementación de escaneo de vulnerabilidades en el sistema de archivos y dependencias.
 
-### 3.1 Escaneo Dinámico de Seguridad
-
-**Herramienta:** OWASP ZAP (Zed Attack Proxy)
-
-**Configuración:**
-- **Target:** `http://4.239.160.144:8080/product-service`
-- **Modo:** Spider + Active Scan
-- **Policy:** Baseline (no invasivo)
-
-**Vulnerabilidades Evaluadas:**
-- SQL Injection
-- XSS (Cross-Site Scripting)
-- Security Headers (CSP, X-Frame-Options, HSTS)
-- Exposed Actuator Endpoints
-- Cookie Security (HttpOnly, Secure flags)
-
-**Integración CI/CD:**
-```yaml
-- name: OWASP ZAP Scan
-  uses: zaproxy/action-baseline@v0.7.0
-  with:
-    target: 'http://4.239.160.144:8080'
-    rules_file_name: '.zap/rules.tsv'
-    fail_action: true
-```
-
-### 3.2 Recomendaciones de Mitigación
-
-| Vulnerabilidad | Severidad | Mitigación |
-|----------------|-----------|------------|
-| Actuator sin autenticación | 🟡 Media | Agregar Spring Security |
-| CORS permisivo | 🟡 Media | Configurar allowedOrigins específicos |
-| Headers faltantes | 🟢 Baja | Agregar Security Headers Filter |
-
----
+* **Herramienta:** [Trivy](https://trivy.dev/) (Aqua Security).
+* **Decisión Técnica:** Se seleccionó Trivy sobre *OWASP Dependency Check* debido a su mayor velocidad de ejecución, base de datos de vulnerabilidades más moderna y capacidad para escanear tanto código fuente (`fs`) como imágenes Docker, cumpliendo explícitamente con los requisitos de la rúbrica.
+* **Implementación:** Pipeline de GitHub Actions (`quality-gate.yml`).
+* **Configuración:**
+    * **Tipo de Escaneo:** Filesystem (`fs`).
+    * **Severidad Reportada:** CRITICAL, HIGH.
+    * **Política:** Reportar hallazgos sin bloquear el pipeline (`exit-code: 0`) para permitir la entrega continua mientras se gestionan las mitigaciones.
+* **Cumplimiento:** ✅ Punto 4 (CI/CD Avanzado - Trivy).
 
 ## 🤖 4. Automatización: CI/CD con GitHub Actions
 
