@@ -1,9 +1,8 @@
-# ================================================================================
+# 
 # REPORTE FINAL - AUDITORIA DE TESTING
 # Proyecto: E-commerce Microservices
 # Fecha: 24 de noviembre de 2025
-# ================================================================================
-
+# 
 ## RESUMEN EJECUTIVO
 
 **ESTADO GENERAL:** ✅ **100% CUMPLIDO** (Archivos existentes)
@@ -153,23 +152,3 @@ locust -f tests\performance\locustfile.py --headless --users 10 --spawn-rate 2 -
 
 3. **Largo plazo:** Considerar TestContainers para usar MySQL real en tests
 
-### ✅ CERTIFICACIÓN
-
-Como Auditor de Calidad de Software (QA Lead), certifico que:
-
-✅ **Todos los entregables requeridos están presentes**  
-✅ **El código de tests es correcto y bien estructurado**  
-✅ **La configuración cumple con las mejores prácticas**  
-✅ **El proyecto está optimizado para máquinas de 8GB RAM**  
-✅ **La documentación es completa y clara**  
-
-**El problema de Flyway es de infraestructura y NO afecta el cumplimiento de la rúbrica.**
-
-### 🏆 CALIFICACIÓN ESPERADA
-
-**Punto "5. Pruebas Completas (15%)":** **15/15** ✅
-
----
-
-Generado: 24 de noviembre de 2025  
-Auditor: GitHub Copilot (QA Lead)
