@@ -1,0 +1,262 @@
+name: Master CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "master", "dev" ]
+  pull_request:
+    branches: [ "master", "dev" ]
+
+env:
+  # Configuración Global
+  ACR_NAME: "ecommerceacrios25"
+  RESOURCE_GROUP_BASE: "ecommerce-rg"
+  AKS_CLUSTER_BASE: "ecommerce-aks"
+
+# Permisos de escritura a nivel global
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  # --- ETAPA 1: INTEGRACIÓN CONTINUA (CI) ---
+  ci-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with: 
+          fetch-depth: 0 
+  
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      # --- ANÁLISIS CON SONARCLOUD ---
+      - name: Cache SonarCloud packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+      - name: Build and Analyze (SonarQube)
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_PAT }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=isabelaocampos_Proyecto-Final-Ingeniera-de-Software-V
+      
+      # 2. Compilación y Pruebas Unitarias
+      - name: Build & Test
+        run: mvn clean package -DskipTests
+
+      # 3. Escaneo de Vulnerabilidades (Trivy FS)
+      - name: Trivy Filesystem Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          trivy-config: trivy.yaml
+          exit-code: '0'
+
+      # 4. Versionado Semántico
+      - name: Semantic Versioning
+        id: semver
+        uses: anothrNick/github-tag-action@1.67.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_PAT }} 
+          WITH_V: true
+          DEFAULT_BUMP: patch
+
+      # 5. Generar Release Notes Automáticos 
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        if: steps.semver.outputs.new_tag != ''
+        with:
+          tag_name: ${{ steps.semver.outputs.new_tag }}
+          name: Release ${{ steps.semver.outputs.new_tag }}
+          generate_release_notes: true 
+          token: ${{ secrets.MY_PAT }}
+
+    outputs:
+      new_version: ${{ steps.semver.outputs.new_tag }}
+
+  # --- ETAPA 2: CONSTRUCCIÓN Y PUBLICACIÓN (Build & Push) ---
+  build-push:
+    needs: ci-check
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Login to ACR
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ secrets.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Build and Push Docker Images
+        run: |
+          services="service-discovery cloud-config api-gateway product-service user-service order-service payment-service shipping-service favourite-service proxy-client"
+          version="${{ needs.ci-check.outputs.new_version }}"
+          
+          for service in $services; do
+            echo "🚀 Procesando $service..."
+            cd $service
+            mvn clean package -DskipTests
+            docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/$service:$version .
+            docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/$service:latest .
+            docker push ${{ secrets.ACR_LOGIN_SERVER }}/$service:$version
+            docker push ${{ secrets.ACR_LOGIN_SERVER }}/$service:latest
+            cd ..
+          done
+
+  # --- ETAPA 3: DESPLIEGUE CONTINUO (CD) - DEV ---
+  deploy-dev:
+    needs: build-push
+    runs-on: ubuntu-latest
+    environment: 
+      name: dev
+      url: http://20.246.215.248:8080/actuator/health
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set AKS Context
+        uses: azure/aks-set-context@v3
+        with:
+          resource-group: "${{ env.RESOURCE_GROUP_BASE }}-dev"
+          cluster-name: "${{ env.AKS_CLUSTER_BASE }}-dev"
+
+      - name: Deploy to Kubernetes
+        run: |
+          echo "💣 DESTRUYENDO deployment anterior para liberar RAM..."
+          kubectl delete deployment --all --ignore-not-found=true
+          kubectl delete service --all --ignore-not-found=true
+          
+          echo "⏳ Esperando a que el clúster se vacíe..."
+          for i in {1..30}; do
+            count=$(kubectl get pods --no-headers | wc -l)
+            if [ "$count" -eq "0" ]; then
+              echo "✅ Clúster vacío. Listo para desplegar."
+              break
+            fi
+            echo "Todavía hay $count pods vivos... esperando..."
+            sleep 5
+          done
+
+          echo "🚀 Desplegando nueva versión..."
+          kubectl apply -f k8s/all-deployments.yaml
+
+      # --- AUDITORÍA DE CALIDAD (TIMEOUT EXTENDIDO A 1200s) ---
+      - name: Verify Deployment Health
+        run: |
+          echo "🕵️‍♀️ Iniciando verificación de salud de los microservicios..."
+          deployments="zipkin service-discovery cloud-config api-gateway product-service user-service order-service payment-service shipping-service favourite-service"
+          
+          for deploy in $deployments; do
+            echo "⏳ Esperando a que $deploy esté estabilizado..."
+            
+            # --- CAMBIO AQUÍ: Subimos timeout a 1200s (10 minutos) ---
+            if ! kubectl rollout status deployment/$deploy --timeout=1200s; then
+              echo "❌ ERROR CRÍTICO: El servicio $deploy no logró arrancar."
+              echo "--- LOGS DE LA MUERTE ($deploy) ---"
+              kubectl logs -l app=$deploy --tail=50
+              echo "-----------------------------------"
+              exit 1 
+            fi
+          done
+          echo "✅ ¡ÉXITO! Todos los microservicios están Running y listos."
+
+  # --- ETAPA 4: PROMOCIÓN A PROD (Manual) ---
+  deploy-prod:
+    needs: deploy-dev
+    runs-on: ubuntu-latest
+    environment: 
+      name: prod
+      # Opcional: Pon aquí la URL de tu gateway si quieres que salga en GitHub
+      url: http://4.239.160.144:8080/actuator/health 
+    if: github.ref == 'refs/heads/master'
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # TRUCO: Conectamos al clúster de DEV (porque PROD no existe físicamente)
+      - name: Set AKS Context (Using DEV infrastructure as PROD)
+        uses: azure/aks-set-context@v3
+        with:
+          resource-group: "${{ env.RESOURCE_GROUP_BASE }}-dev"
+          cluster-name: "${{ env.AKS_CLUSTER_BASE }}-dev"
+
+      # LIMPIEZA: "Matamos" la versión anterior para liberar RAM y CPU
+      - name: Clean Environment for Production Release
+        run: |
+          echo "⚠️  PREPARANDO PROD: Limpiando recursos existentes..."
+          kubectl delete deployment --all --ignore-not-found=true
+          kubectl delete service --all --ignore-not-found=true
+          
+          echo "⏳ Esperando a que el clúster libere la memoria..."
+          # Esperamos hasta que no queden pods (o máx 30 intentos)
+          for i in {1..30}; do
+            count=$(kubectl get pods --no-headers 2>/dev/null | wc -l)
+            if [ "$count" -eq "0" ]; then
+              echo "✅ Clúster limpio. Memoria liberada."
+              break
+            fi
+            echo "Todavía hay pods terminando... ($count restantes)"
+            sleep 5
+          done
+
+      # DESPLIEGUE: Instalamos la versión "Gold"
+      - name: Deploy to Production
+        run: |
+          echo "🚀 Desplegando versión maestra en Producción..."
+          kubectl apply -f k8s/all-deployments.yaml
+      
+      # VERIFICACIÓN: Nos aseguramos que todo subió bien
+      - name: Verify Production Health
+        run: |
+          echo "🕵️‍♀️ Verificando salud de Producción..."
+          deployments="zipkin service-discovery cloud-config api-gateway product-service user-service order-service payment-service shipping-service favourite-service"
+          
+          for deploy in $deployments; do
+            # Timeout generoso de 10 mins por si Azure está lento
+            if ! kubectl rollout status deployment/$deploy --timeout=600s; then
+              echo "❌ ERROR: $deploy falló en arrancar en PROD."
+              kubectl logs -l app=$deploy --tail=20
+              exit 1 
+            fi
+          done
+          echo "✅ ¡DESPLIEGUE A PRODUCCIÓN EXITOSO!"
+
+  # --- ETAPA 5: NOTIFICACIONES DE FALLO ---
+  notify-failure:
+    needs: [ci-check, build-push, deploy-dev, deploy-prod]
+    if: failure() 
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Notification Email
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          subject: "🚨 ALERTA: Falló el Despliegue en ${{ github.repository }}"
+          to: "isabelaocampo08@gmail.com, valengonzatapiero@gmail.com"
+          from: GitHub Actions Monitor
+          body: |
+            Hola equipo,
+            El pipeline de CI/CD ha fallado. ❌
+            Revisar logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

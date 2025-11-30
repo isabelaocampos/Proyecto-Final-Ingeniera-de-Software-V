@@ -10,10 +10,12 @@ management:
 
 spring:
   datasource:
-    url: jdbc:h2:mem:ecommerce_dev_db;DB_CLOSE_ON_EXIT=FALSE
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driverClassName: org.h2.Driver
     username: sa
-    password: 
+    password: password
   jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
     show-sql: true
     hibernate:
       ddl-auto: validate
@@ -34,14 +36,14 @@ logging:
   level:
     org:
       hibernate:
-        SQL: DEBUG
+        SQL: INFO
       springframework:
-        web: DEBUG
-        data: DEBUG
+        web: INFO
+        data: INFO
       boot:
         autoconfigure:
           data:
-            rest: DEBUG
-            jpa: DEBUG
-            orm: DEBUG
+            rest: INFO
+            jpa: INFO
+            orm: INFO
 

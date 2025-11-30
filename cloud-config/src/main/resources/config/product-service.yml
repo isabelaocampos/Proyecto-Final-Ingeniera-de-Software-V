@@ -1,0 +1,86 @@
+server:
+  port: 8500  # <--- PUERTO ESPECÍFICO DEL USUARIO
+  servlet:
+    context-path: /product-service
+
+spring:
+  application:
+    name: PRODUCT-SERVICE
+  # Configuración de Base de Datos H2 (Memoria)
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driverClassName: org.h2.Driver
+    username: sa
+    password: password
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: update
+  h2:
+    console:
+      enabled: true
+  # Trazabilidad
+  zipkin:
+    base-url: http://zipkin:9411/
+
+# Configuración para que se registre en Eureka
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://service-discovery:8761/eureka/
+  instance:
+    prefer-ip-address: true
+
+# Tu configuración original de Resilience4j (Mantenida)
+resilience4j:
+  circuitbreaker:
+    instances:
+      userService:
+        register-health-indicator: true
+        event-consumer-buffer-size: 10
+        automatic-transition-from-open-to-half-open-enabled: true
+        failure-rate-threshold: 50
+        minimum-number-of-calls: 5
+        permitted-number-of-calls-in-half-open-state: 3
+        sliding-window-size: 10
+        wait-duration-in-open-state: 5s
+        sliding-window-type: COUNT_BASED
+  
+  # NUEVOS PATRONES DE RESILIENCIA
+  # Pattern 1: Rate Limiter - Limita a 5 peticiones cada 10 segundos
+  ratelimiter:
+    instances:
+      productService:
+        limit-for-period: 5
+        limit-refresh-period: 10s
+        timeout-duration: 0s
+        register-health-indicator: true
+        event-consumer-buffer-size: 100
+  
+  # Pattern 2: Retry - 3 intentos con espera de 500ms entre intentos
+  retry:
+    instances:
+      productService:
+        max-attempts: 3
+        wait-duration: 500ms
+        enable-exponential-backoff: false
+        register-health-indicator: true
+        event-consumer-buffer-size: 100
+
+management:
+  health:
+    circuitbreakers:
+      enabled: true
+    ratelimiters:
+      enabled: true
+    retries:
+      enabled: true
+  endpoint:
+    health:
+      show-details: always
+  endpoints:
+    web:
+      exposure:
+        include: "*"
