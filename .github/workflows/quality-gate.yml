@@ -69,6 +69,8 @@ jobs:
         continue-on-error: true
       
       - name: 📊 Generate Coverage Report (JaCoCo)
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         run: |
           echo "📊 Generando reporte de cobertura JaCoCo..."
           mvn -B clean verify

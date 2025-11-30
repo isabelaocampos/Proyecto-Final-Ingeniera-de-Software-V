@@ -53,6 +53,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.MY_PAT }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=isabelaocampos_Proyecto-Final-Ingeniera-de-Software-V
       
       # 2. Compilación y Pruebas Unitarias
