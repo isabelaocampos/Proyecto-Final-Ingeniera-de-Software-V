@@ -221,8 +221,11 @@
 				<artifactId>dependency-check-maven</artifactId>
 				<version>10.0.3</version>
 				<configuration>
-					<!-- DESACTIVAR TEMPORALMENTE: Problemas de conexión con NVD -->
+					<!-- DESACTIVADO: Reemplazado por Trivy (más rápido y moderno) -->
 					<skip>true</skip>
+					
+					<!-- NVD API Key desde variables de entorno (obligatorio para evitar rate limit) -->
+					<nvdApiKey>${env.NVD_API_KEY}</nvdApiKey>
 					
 					<!-- Generar reportes HTML y JSON -->
 					<format>HTML</format>
