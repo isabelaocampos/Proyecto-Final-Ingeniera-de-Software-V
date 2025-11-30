@@ -305,25 +305,8 @@ zap-report.html
 ✅ **FinOps:** Optimizar costos de nube mediante Smoke Tests en lugar de Stress Tests masivos  
 ✅ **Pragmatismo:** Aceptar limitaciones de infraestructura (FK constraints en H2) y validar lo esencial  
 ✅ **Automatización:** Quality Gates en CI/CD previenen regresiones  
+ 
 
-### 6.2 Próximos Pasos
-
-🔜 **Testcontainers:** Integrar MySQL real con Docker en tests de integración  
-🔜 **Contract Testing:** Implementar Pact para validar contratos entre microservicios  
-🔜 **Chaos Engineering:** Introducir fallos controlados (Circuit Breaker, Timeout)  
-🔜 **APM:** Integrar New Relic/Dynatrace para monitoreo en producción  
-
----
-
-## 📚 Referencias
-
-- [Testing Pyramid - Martin Fowler](https://martinfowler.com/articles/practical-test-pyramid.html)
-- [FinOps Foundation](https://www.finops.org/)
-- [OWASP Top 10](https://owasp.org/www-project-top-ten/)
-- [Locust Documentation](https://docs.locust.io/)
-- [JaCoCo Maven Plugin](https://www.jacoco.org/jacoco/trunk/doc/maven.html)
-
----
 
 **Elaborado por:** Equipo de QA y DevOps  
 **Fecha:** 27 de Noviembre de 2025  
