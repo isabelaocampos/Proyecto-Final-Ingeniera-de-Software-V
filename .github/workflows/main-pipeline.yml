@@ -62,7 +62,7 @@ jobs:
 
       # 3. Escaneo de Vulnerabilidades (Trivy FS)
       - name: Trivy Filesystem Scan
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.29.0
         with:
           scan-type: 'fs'
           scan-ref: '.'

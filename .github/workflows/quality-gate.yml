@@ -75,7 +75,7 @@ jobs:
         continue-on-error: true
       
       - name: 🛡️ Security Scan (Trivy)
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.29.0
         with:
           scan-type: 'fs'
           ignore-unfixed: true
