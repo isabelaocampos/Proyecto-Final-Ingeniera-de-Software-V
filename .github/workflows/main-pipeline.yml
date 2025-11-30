@@ -53,7 +53,7 @@ jobs:
 
       # 3. Escaneo de Vulnerabilidades (Trivy FS)
       - name: Trivy Filesystem Scan
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@18f2510ee396bbf400402947b394f2dd8c87dbb0 # v0.29.0
         with:
           scan-type: 'fs'
           scan-ref: '.'
@@ -63,7 +63,7 @@ jobs:
       # 4. Versionado Semántico
       - name: Semantic Versioning
         id: semver
-        uses: anothrNick/github-tag-action@1.67.0
+        uses: anothrNick/github-tag-action@a2cddb322953a9605037046f05e97dda2772a8c5 # 1.67.0
         env:
           GITHUB_TOKEN: ${{ secrets.MY_PAT }} 
           WITH_V: true
@@ -71,7 +71,7 @@ jobs:
 
       # 5. Generar Release Notes Automáticos 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@c062e08bd532815e2082a85e87e3ef29c3e6d191 # v1
         if: steps.semver.outputs.new_tag != ''
         with:
           tag_name: ${{ steps.semver.outputs.new_tag }}
@@ -246,7 +246,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Send Notification Email
-        uses: dawidd6/action-send-mail@v3
+        uses: dawidd6/action-send-mail@bd427021975443224b7a022be3f443907c10d32f # v3
         with:
           server_address: smtp.gmail.com
           server_port: 465
