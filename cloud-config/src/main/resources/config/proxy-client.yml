@@ -1,0 +1,30 @@
+server:
+  port: 8761
+
+spring:
+  application:
+    name: SERVICE-DISCOVERY
+  zipkin:
+    base-url: http://zipkin:9411/
+  # Eureka NO usa base de datos relacional, no agregamos bloque H2/JPA aquí
+
+eureka:
+  instance:
+    hostname: service-discovery
+    prefer-ip-address: true
+  client:
+    # IMPORTANTE: Estos dos deben ser FALSE para el servidor Eureka
+    register-with-eureka: false
+    fetch-registry: false
+    service-url:
+      defaultZone: http://service-discovery:8761/eureka/
+  server:
+    # Desactiva la "autoconservación" para desarrollo (detecta caídas más rápido)
+    enable-self-preservation: false
+    wait-time-in-ms-when-sync-empty: 5
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"

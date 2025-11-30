@@ -1,39 +1,31 @@
+server:
+  port: 8761 # Puerto fijo, no negociable
 
 spring:
-  zipkin:
-    base-url: ${SPRING_ZIPKIN_BASE_URL:http://localhost:9411/}
   application:
     name: SERVICE-DISCOVERY
-  profiles:
-    active:
-    - dev
+  cloud:
+    config:
+      enabled: false # ¡IMPORTANTE! Le dice: "No busques config server, arranca ya"
+    loadbalancer:
+      ribbon:
+        enabled: false # Desactiva balanceadores viejos para ahorrar RAM
 
-resilience4j:
-  circuitbreaker:
-    instances:
-      serviceDiscovery:
-        register-health-indicator: true
-        event-consumer-buffer-size: 10
-        automatic-transition-from-open-to-half-open-enabled: true
-        failure-rate-threshold: 50
-        minimum-number-of-calls: 5
-        permitted-number-of-calls-in-half-open-state: 3
-        sliding-window-size: 10
-        wait-duration-in-open-state: 5s
-        sliding-window-type: COUNT_BASED
+eureka:
+  instance:
+    hostname: service-discovery
+    prefer-ip-address: true
+  client:
+    register-with-eureka: false # Él es el servidor, no se registra a sí mismo
+    fetch-registry: false       # No descarga la lista, él TIENE la lista
+    service-url:
+      defaultZone: http://service-discovery:8761/eureka/
+  server:
+    enable-self-preservation: false # Para desarrollo, si uno muere, lo borra rápido
+    wait-time-in-ms-when-sync-empty: 5
 
-management:
-  health:
-    circuitbreakers:
-      enabled: true
-  endpoint:
-    health:
-      show-details: always
-
-
-
-
-
-
-
-
+# Configuración visual (opcional, para que no llene el log de basura)
+logging:
+  level:
+    com.netflix.eureka: INFO
+    com.netflix.discovery: INFO

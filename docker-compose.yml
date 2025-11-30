@@ -1,0 +1,236 @@
+version: '3.8'
+
+networks:
+  microservices_network:
+    driver: bridge
+
+services:
+  # --- NIVEL 1: INFRAESTRUCTURA (Logs y Tracing) ---
+  zipkin-container:
+    image: openzipkin/zipkin
+    container_name: zipkin
+    ports:
+      - "9411:9411"
+    networks:
+      - microservices_network
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # --- NIVEL 2: CORE (Discovery & Config) ---
+  service-discovery-container:
+    build: ./service-discovery
+    image: service-discovery-ecommerce-boot:0.1.0
+    container_name: service-discovery
+    ports:
+      - "8761:8761"
+    networks:
+      - microservices_network
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8761/eureka/apps"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    deploy:
+      resources:
+        limits:
+          memory: 350M
+
+  cloud-config-container:
+    build: ./cloud-config
+    image: cloud-config-ecommerce-boot:0.1.0
+    container_name: cloud-config
+    ports:
+      - "9296:9296"
+    networks:
+      - microservices_network
+    environment:
+      - SPRING_PROFILES_ACTIVE=native  # <--- ¡CAMBIO CRÍTICO AQUÍ!
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-discovery:8761/eureka
+      - SPRING_ZIPKIN_BASE_URL=http://zipkin:9411/
+    deploy:
+      resources:
+        limits:
+          memory: 350M
+
+  # --- NIVEL 3: GATEWAY (Puerta de enlace) ---
+  api-gateway-container:
+    build: ./api-gateway
+    image: api-gateway-ecommerce-boot:0.1.0
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    networks:
+      - microservices_network
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      # LA OPCIÓN NUCLEAR: Inyectamos la propiedad directo a Java (-D)
+      - JAVA_TOOL_OPTIONS=-Deureka.client.serviceUrl.defaultZone=http://service-discovery:8761/eureka/ -Dspring.cloud.config.uri=http://cloud-config:9296
+    depends_on:
+      service-discovery-container:
+        condition: service_healthy
+      cloud-config-container:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+
+  # --- NIVEL 4: MICROSERVICIOS DE NEGOCIO ---
+  
+  product-service-container:
+    build: ./product-service
+    image: product-service-ecommerce-boot:0.1.0
+    container_name: product-service
+    ports:
+      - "8500:8500"
+    networks:
+      - microservices_network
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      # LA OPCIÓN NUCLEAR: Inyectamos la propiedad directo a Java (-D)
+      - JAVA_TOOL_OPTIONS=-Deureka.client.serviceUrl.defaultZone=http://service-discovery:8761/eureka/ -Dspring.cloud.config.uri=http://cloud-config:9296
+    depends_on:
+      service-discovery-container:
+        condition: service_healthy
+      cloud-config-container:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+
+  user-service-container:
+    build: ./user-service
+    image: user-service-ecommerce-boot:0.1.0
+    container_name: user-service
+    ports:
+      - "8700:8700"
+    networks:
+      - microservices_network
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      # LA OPCIÓN NUCLEAR: Inyectamos la propiedad directo a Java (-D)
+      - JAVA_TOOL_OPTIONS=-Deureka.client.serviceUrl.defaultZone=http://service-discovery:8761/eureka/ -Dspring.cloud.config.uri=http://cloud-config:9296
+    depends_on:
+      service-discovery-container:
+        condition: service_healthy
+      cloud-config-container:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+
+  order-service-container:
+    build: ./order-service
+    image: order-service-ecommerce-boot:0.1.0
+    container_name: order-service
+    ports:
+      - "8300:8300"
+    networks:
+      - microservices_network
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      # LA OPCIÓN NUCLEAR: Inyectamos la propiedad directo a Java (-D)
+      - JAVA_TOOL_OPTIONS=-Deureka.client.serviceUrl.defaultZone=http://service-discovery:8761/eureka/ -Dspring.cloud.config.uri=http://cloud-config:9296
+    depends_on:
+      service-discovery-container:
+        condition: service_healthy
+      cloud-config-container:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+
+  payment-service-container:
+    build: ./payment-service
+    image: payment-service-ecommerce-boot:0.1.0
+    container_name: payment-service
+    ports:
+      - "8400:8400"
+    networks:
+      - microservices_network
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      # LA OPCIÓN NUCLEAR: Inyectamos la propiedad directo a Java (-D)
+      - JAVA_TOOL_OPTIONS=-Deureka.client.serviceUrl.defaultZone=http://service-discovery:8761/eureka/ -Dspring.cloud.config.uri=http://cloud-config:9296
+    depends_on:
+      service-discovery-container:
+        condition: service_healthy
+      cloud-config-container:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+
+  shipping-service-container:
+    build: ./shipping-service
+    image: shipping-service-ecommerce-boot:0.1.0
+    container_name: shipping-service
+    ports:
+      - "8600:8600"
+    networks:
+      - microservices_network
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      # LA OPCIÓN NUCLEAR: Inyectamos la propiedad directo a Java (-D)
+      - JAVA_TOOL_OPTIONS=-Deureka.client.serviceUrl.defaultZone=http://service-discovery:8761/eureka/ -Dspring.cloud.config.uri=http://cloud-config:9296
+    depends_on:
+      service-discovery-container:
+        condition: service_healthy
+      cloud-config-container:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+
+  favourite-service-container:
+    build: ./favourite-service
+    image: favourite-service-ecommerce-boot:0.1.0
+    container_name: favourite-service
+    ports:
+      - "8800:8800"
+    networks:
+      - microservices_network
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      # LA OPCIÓN NUCLEAR: Inyectamos la propiedad directo a Java (-D)
+      - JAVA_TOOL_OPTIONS=-Deureka.client.serviceUrl.defaultZone=http://service-discovery:8761/eureka/ -Dspring.cloud.config.uri=http://cloud-config:9296
+    depends_on:
+      service-discovery-container:
+        condition: service_healthy
+      cloud-config-container:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+
+  proxy-client-container:
+    build: ./proxy-client
+    image: proxy-client-ecommerce-boot:0.1.0
+    container_name: proxy-client
+    ports:
+      - "8900:8900"
+    networks:
+      - microservices_network
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      # LA OPCIÓN NUCLEAR: Inyectamos la propiedad directo a Java (-D)
+      - JAVA_TOOL_OPTIONS=-Deureka.client.serviceUrl.defaultZone=http://service-discovery:8761/eureka/ -Dspring.cloud.config.uri=http://cloud-config:9296
+    depends_on:
+      service-discovery-container:
+        condition: service_healthy
+      cloud-config-container:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          memory: 300M
