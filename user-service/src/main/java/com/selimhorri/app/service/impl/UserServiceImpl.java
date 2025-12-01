@@ -7,6 +7,8 @@ import javax.transaction.Transactional;
 
 import org.springframework.stereotype.Service;
 
+import io.micrometer.core.instrument.MeterRegistry;
+
 import com.selimhorri.app.dto.UserDto;
 import com.selimhorri.app.exception.wrapper.UserObjectNotFoundException;
 import com.selimhorri.app.helper.UserMappingHelper;
@@ -23,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 public class UserServiceImpl implements UserService {
 	
 	private final UserRepository userRepository;
+	private final MeterRegistry meterRegistry;
 	
 	@Override
 	public List<UserDto> findAll() {
@@ -45,7 +48,9 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public UserDto save(final UserDto userDto) {
 		log.info("*** UserDto, service; save user *");
-		return UserMappingHelper.map(this.userRepository.save(UserMappingHelper.map(userDto)));
+		UserDto savedUser = UserMappingHelper.map(this.userRepository.save(UserMappingHelper.map(userDto)));
+		meterRegistry.counter("users.registered").increment();
+		return savedUser;
 	}
 	
 	@Override
