@@ -7,6 +7,8 @@ import javax.transaction.Transactional;
 
 import org.springframework.stereotype.Service;
 
+import io.micrometer.core.instrument.MeterRegistry;
+
 import com.selimhorri.app.dto.OrderDto;
 import com.selimhorri.app.exception.wrapper.OrderNotFoundException;
 import com.selimhorri.app.helper.OrderMappingHelper;
@@ -23,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 public class OrderServiceImpl implements OrderService {
 	
 	private final OrderRepository orderRepository;
+	private final MeterRegistry meterRegistry;
 	
 	@Override
 	public List<OrderDto> findAll() {
@@ -46,8 +49,10 @@ public class OrderServiceImpl implements OrderService {
 	@Override
 	public OrderDto save(final OrderDto orderDto) {
 		log.info("*** OrderDto, service; save order *");
-		return OrderMappingHelper.map(this.orderRepository
+		OrderDto savedOrder = OrderMappingHelper.map(this.orderRepository
 				.save(OrderMappingHelper.map(orderDto)));
+		meterRegistry.counter("orders.placed", "type", "online").increment();
+		return savedOrder;
 	}
 	
 	@Override
