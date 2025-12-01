@@ -70,6 +70,15 @@ resilience4j:
         event-consumer-buffer-size: 100
 
 management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,info,metrics,prometheus"
+  endpoint:
+    health:
+      show-details: always
+    prometheus:
+      enabled: true
   health:
     circuitbreakers:
       enabled: true
@@ -77,10 +86,7 @@ management:
       enabled: true
     retries:
       enabled: true
-  endpoint:
-    health:
-      show-details: always
-  endpoints:
-    web:
-      exposure:
-        include: "*"
+  metrics:
+    export:
+      prometheus:
+        enabled: true
